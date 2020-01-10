@@ -9,6 +9,18 @@
 #include <unistd.h>
 #include <getopt.h>
 #include <string.h>
+#include <fcntl.h>
+#include <signal.h>
+
+void sigsev_handler(int signum) {
+    fprintf(stderr, "Error: segmentation fault.\n");
+    exit(4)
+}
+
+void seg_fault() {
+    char* ptr = NULL;
+    *ptr = 'f';
+}
 
 int main(int argc, char** argv) {
 
@@ -55,11 +67,6 @@ int main(int argc, char** argv) {
 		else if (strcmp(name, "catch") == 0) {
 		    opt_catch = 1;
 		}
-		
-		printf("option %s", long_options[option_index].name);
-		if (optarg)
-		    printf(" with arg %s", optarg);
-		printf("\n");
 		break;
 	    
             case 'i':
@@ -88,19 +95,33 @@ int main(int argc, char** argv) {
 
     // Do any file redirection
     if (opt_input) {
+	int ifd = open(arg_input, O_RDONLY);
+	if (ifd >= 0) {
+	    close(0);
+	    dup(ifd);
+	    close(ifd);
+	}
 	printf("option input with arg %s\n", arg_input);
     }
     if (opt_output) {
+	int ofd = creat(arg_output, 0666);
+	if (ofd >= 0) {
+	    close(1);
+	    dup(ofd);
+	    close(ofd);
+	}
         printf("option output with arg %s\n", arg_output);
     }
 
     // Register the signal handler
     if (opt_catch) {
+	signal(SIGSEGV, sigsev_handler);
 	printf("option catch\n");
     }
 
     // Cause the segfault
     if (opt_segfault) {
+	seg_fault();
         printf("option segfault\n");
     }
 
