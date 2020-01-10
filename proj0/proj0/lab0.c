@@ -96,6 +96,11 @@ int main(int argc, char** argv) {
     // Do any file redirection
     if (opt_input) {
 	int ifd = open(arg_input, O_RDONLY);
+	if (ifd == -1) {
+	    fprintf(stderr, "Error (option '--input'): the file %s could not be opened.\n", arg_input);
+	    perror("open");
+	    exit(2);
+	}
 	if (ifd >= 0) {
 	    close(0);
 	    dup(ifd);
@@ -105,6 +110,11 @@ int main(int argc, char** argv) {
     }
     if (opt_output) {
 	int ofd = creat(arg_output, 0666);
+	if (ofd == -1) {
+            fprintf(stderr, "Error (option '--output'): the file %s could not be opened.\n", arg_output);
+            perror("creat");
+            exit(3);
+        }
 	if (ofd >= 0) {
 	    close(1);
 	    dup(ofd);
