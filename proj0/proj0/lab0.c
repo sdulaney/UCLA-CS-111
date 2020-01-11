@@ -11,10 +11,13 @@
 #include <string.h>
 #include <fcntl.h>
 #include <signal.h>
+#include <errno.h>
 
 void sigsev_handler(int signum) {
-    fprintf(stderr, "Error: segmentation fault.\n");
-    exit(4);
+    if (signum == SIGSEGV) {
+	fprintf(stderr, "Error: segmentation fault.\n");
+	exit(4);
+    }
 }
 
 void seg_fault() {
@@ -86,6 +89,8 @@ int main(int argc, char** argv) {
 		break;
 
             case '?':
+		fprintf(stderr, "usage: ./lab0 [OPTION]...\nvalid options: --input=filename, --output=filename, --segfault, --catch\n");
+		exit(1);
 		break;
 
             default:
@@ -97,8 +102,7 @@ int main(int argc, char** argv) {
     if (opt_input) {
 	int ifd = open(arg_input, O_RDONLY);
 	if (ifd == -1) {
-	    fprintf(stderr, "Error (option '--input'): the file %s could not be opened.\n", arg_input);
-	    perror("open");
+	    fprintf(stderr, "Error (option '--input'): the file %s could not be opened.\nopen: %s\n", arg_input, strerror(errno));
 	    exit(2);
 	}
 	if (ifd >= 0) {
@@ -106,13 +110,11 @@ int main(int argc, char** argv) {
 	    dup(ifd);
 	    close(ifd);
 	}
-	printf("option input with arg %s\n", arg_input);
     }
     if (opt_output) {
 	int ofd = creat(arg_output, 0666);
 	if (ofd == -1) {
-            fprintf(stderr, "Error (option '--output'): the file %s could not be opened.\n", arg_output);
-            perror("creat");
+            fprintf(stderr, "Error (option '--output'): the file %s could not be opened.\ncreat: %s\n", arg_output, strerror(errno));
             exit(3);
         }
 	if (ofd >= 0) {
@@ -120,19 +122,16 @@ int main(int argc, char** argv) {
 	    dup(ofd);
 	    close(ofd);
 	}
-        printf("option output with arg %s\n", arg_output);
     }
 
     // Register the signal handler
     if (opt_catch) {
 	signal(SIGSEGV, sigsev_handler);
-	printf("option catch\n");
     }
 
     // Cause the segfault
     if (opt_segfault) {
 	seg_fault();
-        printf("option segfault\n");
     }
 
     // Copy STDIN to STDOUT 
