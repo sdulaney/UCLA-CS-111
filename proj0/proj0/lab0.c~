@@ -102,8 +102,7 @@ int main(int argc, char** argv) {
     if (opt_input) {
 	int ifd = open(arg_input, O_RDONLY);
 	if (ifd == -1) {
-	    fprintf(stderr, "Error (option '--input'): the file %s could not be opened.\n", arg_input);
-	    perror("open");
+	    fprintf(stderr, "Error (option '--input'): the file %s could not be opened.\nopen: %s\n", arg_input, strerror(errno));
 	    exit(2);
 	}
 	if (ifd >= 0) {
@@ -115,8 +114,7 @@ int main(int argc, char** argv) {
     if (opt_output) {
 	int ofd = creat(arg_output, 0666);
 	if (ofd == -1) {
-            fprintf(stderr, "Error (option '--output'): the file %s could not be opened.\n", arg_output);
-            perror("creat");
+            fprintf(stderr, "Error (option '--output'): the file %s could not be opened.\ncreat: %s\n", arg_output, strerror(errno));
             exit(3);
         }
 	if (ofd >= 0) {

@@ -2,41 +2,63 @@
 # EMAIL: sdulaney@ucla.edu
 # ID: 904-064-791 
 
-.SILENT: check
-
 build:
 	gcc lab0.c -o lab0 -g -Wall -Wextra
 
-check: clean build
-	echo "exercising input/output features"
-	EXIT_OK=0
-	EXIT_ARG=1
-	EXIT_BADIN=2
-	EXIT_BADOUT=3
-	EXIT_FAULT=4
-	SIG_SEGFAULT=139
+check: clean build dist
+	@echo "correctly copy input to output"
+	@echo "Hello, world!" > in
+	@cat in | ./lab0 > out; RC=$$?; X="FAIL"; [ $$RC -eq 0 ] && X="OK"; echo "RC=$$RC...$$X";
+	@cmp in out > /dev/null; RC=$$?; X="FAIL"; [ $$RC -eq 0 ] && X="OK"; echo "stdout...$$X";
 
-	echo "... correctly copy input to output"
-	echo "Hello, world!" > in
-	cat in | ./lab0 > out
-	RC=$?
-	if [ $RC -eq 0 ]
-        then
-                echo "        RC=$RC ... OK"
-        else
-                echo "        RC=$RC ... FAILURE"
-        fi
-	cmp in out > /dev/null
-	if [ $? -eq 0 ]
-	then
-		echo "        data comparison ... OK"
-	else
-		echo "        data comparison ... FAILURE"
-	fi
+	@echo "correctly implements --input"
+	@./lab0 --input=in > out; RC=$$?; X="FAIL"; [ $$RC -eq 0 ] && X="OK"; echo "RC=$$RC...$$X";
+	@cmp in out > /dev/null; RC=$$?; X="FAIL"; [ $$RC -eq 0 ] && X="OK"; echo "stdout...$$X";
+
+	@echo "correctly implements --output"
+	@cat in | ./lab0 --output=out; RC=$$?; X="FAIL"; [ $$RC -eq 0 ] && X="OK"; echo "RC=$$RC...$$X";
+	@cmp in out > /dev/null; RC=$$?; X="FAIL"; [ $$RC -eq 0 ] && X="OK"; echo "stdout...$$X";
+
+	@echo "implements combined --input + --output"
+	@./lab0 --input=in --output=out; RC=$$?; X="FAIL"; [ $$RC -eq 0 ] && X="OK"; echo "RC=$$RC...$$X";
+	@cmp in out > /dev/null; RC=$$?; X="FAIL"; [ $$RC -eq 0 ] && X="OK"; echo "stdout...$$X";
+
+	@echo "correct handling of un-openable/creatable output file"
+	@echo "- un-openable output file"
+	@chmod -rw out
+	@cat in | ./lab0 --output=out 2> out.2; RC=$$?; X="FAIL"; [ $$RC -eq 3 ] && X="OK"; echo "RC=$$RC...$$X";
+	@touch empty
+	@cmp empty out.2 &> /dev/null; RC=$$?; X="FAIL"; [ $$RC -eq 1 ] && X="OK"; echo "stderr...$$X";
+	@echo "- un-creatable output file"
+	@cat in | ./lab0 --output=/ 2> out.2; RC=$$?; X="FAIL"; [ $$RC -eq 3 ] && X="OK"; echo "RC=$$RC...$$X";
+	@cmp empty out.2 &> /dev/null; RC=$$?; X="FAIL"; [ $$RC -eq 1 ] && X="OK"; echo \
+"stderr...$$X";
+
+	@echo "correct handling of non-existent input file"
+	@./lab0 --input=i 2> out.2; RC=$$?; X="FAIL"; [ $$RC -eq 2 ] && X="OK"; echo "RC=$$RC...$$X";
+	@cmp empty out.2 &> /dev/null; RC=$$?; X="FAIL"; [ $$RC -eq 1 ] && X="OK"; echo "stderr...$$X";
+
+	@echo "correct handling of un-openable input file"
+	@chmod -rw in
+	@./lab0 --input=in 2> out.2; RC=$$?; X="FAIL"; [ $$RC -eq 2 ] && X="OK"; echo "RC=$$RC...$$X";
+	@cmp empty out.2 &> /dev/null; RC=$$?; X="FAIL"; [ $$RC -eq 1 ] && X="OK"; echo "stderr...$$X";
+
+	@chmod +rw in
+	@chmod +rw out
+
+	@echo "correct handling of invalid arguments"
+
+	@echo "generate (and die from) SIGSEGV"
+
+	@echo "catch and report SIGSEGV"
 
 clean:
 	rm lab0
 	rm lab0-904-064-791.tar.gz
+	rm in
+	rm out
+	rm out.2
+	rm empty
 
 dist:
 	tar -czf lab0-904-064-791.tar.gz lab0.c Makefile backtrace.png breakpoint.png README

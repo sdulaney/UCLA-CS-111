@@ -114,7 +114,7 @@ int main(int argc, char** argv) {
     if (opt_output) {
 	int ofd = creat(arg_output, 0666);
 	if (ofd == -1) {
-            fprintf(stderr, "Error (option '--output'): the file %s could not be opened.\ncreat: %s\n", arg_output, strerror(errno));
+            fprintf(stderr, "Error (option '--output'): the file %s could not be created.\ncreat: %s\n", arg_output, strerror(errno));
             exit(3);
         }
 	if (ofd >= 0) {
