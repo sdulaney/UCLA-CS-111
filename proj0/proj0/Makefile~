@@ -58,12 +58,12 @@ check: build
 	@cmp empty out.2 &> /dev/null; RC=$$?; X="FAIL"; [ $$RC -eq 1 ] && X="OK"; echo "stderr...$$X";
 
 clean:
-	rm lab0
-	rm lab0-904-064-791.tar.gz
-	rm in
-	rm out
-	rm out.2
-	rm empty
+	-rm lab0
+	-rm lab0-904-064-791.tar.gz
+	-rm in
+	-rm out
+	-rm out.2
+	-rm empty
 
 dist:
 	tar -czf lab0-904-064-791.tar.gz lab0.c Makefile backtrace.png breakpoint.png README
