@@ -5,7 +5,7 @@
 build:
 	gcc lab0.c -o lab0 -g -Wall -Wextra
 
-check: clean build dist
+check: build
 	@echo "correctly copy input to output"
 	@echo "Hello, world!" > in
 	@cat in | ./lab0 > out; RC=$$?; X="FAIL"; [ $$RC -eq 0 ] && X="OK"; echo "RC=$$RC...$$X";
@@ -47,18 +47,23 @@ check: clean build dist
 	@chmod +rw out
 
 	@echo "correct handling of invalid arguments"
+	@./lab0 --blah 2> out.2; RC=$$?; X="FAIL"; [ $$RC -eq 1 ] && X="OK"; echo "RC=$$RC...$$X";
+	@cmp empty out.2 &> /dev/null; RC=$$?; X="FAIL"; [ $$RC -eq 1 ] && X="OK"; echo "stderr...$$X";
 
 	@echo "generate (and die from) SIGSEGV"
+	@./lab0 --segfault; RC=$$?; X="FAIL"; [ $$RC -eq 139 ] && X="OK"; echo "RC=$$RC...$$X";
 
 	@echo "catch and report SIGSEGV"
+	@./lab0 --catch --segfault 2> out.2; RC=$$?; X="FAIL"; [ $$RC -eq 4 ] && X="OK"; echo "RC=$$RC...$$X";
+	@cmp empty out.2 &> /dev/null; RC=$$?; X="FAIL"; [ $$RC -eq 1 ] && X="OK"; echo "stderr...$$X";
 
 clean:
-	rm lab0
-	rm lab0-904-064-791.tar.gz
-	rm in
-	rm out
-	rm out.2
-	rm empty
+	-rm lab0
+	-rm lab0-904-064-791.tar.gz
+	-rm in
+	-rm out
+	-rm out.2
+	-rm empty
 
 dist:
 	tar -czf lab0-904-064-791.tar.gz lab0.c Makefile backtrace.png breakpoint.png README
