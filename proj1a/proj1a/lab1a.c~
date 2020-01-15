@@ -109,19 +109,7 @@ int main(int argc, char** argv) {
     termios_new.c_oflag = 0;                  /* no processing	*/
     termios_new.c_lflag = 0;                  /* no processing	*/
     tcsetattr(0, TCSANOW, &termios_new);
-
-    // Read (ASCII) input from the keyboard into a buffer
-    // TODO: Add error checking
-    char* input = char[100];
-    while (1) {
-	ssize_t rv = read(0, input, 99);
-	if (rv == -1) {
-	    
-	}
-	for (int i = 0; i < rv; i++) {
-	    fprintf(stdout, "%c", input[i]);
-	}
-    }
+    
 
 
     // Restore the terminal modes

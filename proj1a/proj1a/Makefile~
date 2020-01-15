@@ -59,8 +59,12 @@ check: build
 	@cmp empty out.2 &> /dev/null; RC=$$?; X="FAIL"; [ $$RC -eq 1 ] && X="OK"; echo "stderr...$$X";
 
 clean:
-	-rm lab1a
-	-rm lab1a-904-064-791.tar.gz
+	-rm lab0
+	-rm lab0-904-064-791.tar.gz
+	-rm in
+	-rm out
+	-rm out.2
+	-rm empty
 
 dist:
 	tar -czf lab1a-904-064-791.tar.gz lab1a.c Makefile README

@@ -12,7 +12,6 @@
 #include <fcntl.h>
 #include <signal.h>
 #include <errno.h>
-#include <termios.h>
 
 void sigsev_handler(int signum) {
     if (signum == SIGSEGV) {
@@ -99,33 +98,53 @@ int main(int argc, char** argv) {
         }
     }
 
-    // Get and save the current terminal modes
-    struct termios termios_curr;
-    tcgetattr(0, &termios_curr);
-
-    // Put the keyboard into character-at-a-time, no-echo mode
-    struct termios termios_new = termios_curr;
-    termios_new.c_iflag = ISTRIP;             /* only lower 7 bits	*/
-    termios_new.c_oflag = 0;                  /* no processing	*/
-    termios_new.c_lflag = 0;                  /* no processing	*/
-    tcsetattr(0, TCSANOW, &termios_new);
-
-    // Read (ASCII) input from the keyboard into a buffer
-    // TODO: Add error checking
-    char* input = char[100];
-    while (1) {
-	ssize_t rv = read(0, input, 99);
-	if (rv == -1) {
-	    
+    // Do any file redirection
+    if (opt_input) {
+	int ifd = open(arg_input, O_RDONLY);
+	if (ifd == -1) {
+	    fprintf(stderr, "Error (option '--input'): the file %s could not be opened.\nopen: %s\n", arg_input, strerror(errno));
+	    exit(2);
 	}
-	for (int i = 0; i < rv; i++) {
-	    fprintf(stdout, "%c", input[i]);
+	if (ifd >= 0) {
+	    close(0);
+	    dup(ifd);
+	    close(ifd);
+	}
+    }
+    if (opt_output) {
+	int ofd = creat(arg_output, 0666);
+	if (ofd == -1) {
+            fprintf(stderr, "Error (option '--output'): the file %s could not be created.\ncreat: %s\n", arg_output, strerror(errno));
+            exit(3);
+        }
+	if (ofd >= 0) {
+	    close(1);
+	    dup(ofd);
+	    close(ofd);
 	}
     }
 
+    // Register the signal handler
+    if (opt_catch) {
+	signal(SIGSEGV, sigsev_handler);
+    }
 
-    // Restore the terminal modes
-    tcsetattr(0, TCSANOW, &termios_curr);
-    
+    // Cause the segfault
+    if (opt_segfault) {
+	seg_fault();
+    }
+
+    // Copy STDIN to STDOUT 
+    int buf;
+    while (1) {
+	int temp = read(0, &buf, 1);
+
+	// EOF
+	if (temp == 0) {
+	    break;
+	}
+
+	write(1, &buf, 1);
+    }
     exit(0);
 }
