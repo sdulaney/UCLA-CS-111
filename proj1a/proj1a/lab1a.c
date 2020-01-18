@@ -109,21 +109,31 @@ int main(int argc, char** argv) {
 	}
 	for (int i = 0; i < rv; i++) {
 	    if (input[i] == '\x0D' || input[i] == '\x0A') {
-		fprintf(stdout, "%c%c", '\x0D', '\x0A');
+		char* output = "\x0D\x0A";
+		ssize_t temp = write(0, output, 2);
+		if (temp < 2) {               /* # bytes written may be less than arg count */
+		    fprintf(stderr, "Error writing to file descriptor 0.\nwrite: %s\n", strerror(errno));
+		    exit(1);
+		}		
+//		fprintf(stdout, "%c%c", '\x0D', '\x0A');
 	    }
 	    else if (input[i] == '\x04') {
-		// restore normal terminal modes and exit(0)
+		// Restore the terminal modes
+		tcsetattr(0, TCSANOW, &termios_curr);
+		exit(0);
 	    }
 	    else {
-		fprintf(stdout, "%c", input[i]);
+		// TODO: Use write instead and do error checking
+		ssize_t temp = write(0, &input[i], 1);
+		if (temp < 1) {              /* # bytes written may be less than arg count */
+		    fprintf(stderr, "Error writing to file descriptor 0.\nwrite: %s\n", strerror(errno));
+		    exit(1);
+		}
+		//fprintf(stdout, "%c", input[i]);
 	    }
 	}
 	i++;
     }
 
-
-    // Restore the terminal modes
-    tcsetattr(0, TCSANOW, &termios_curr);
-    
     exit(0);
 }

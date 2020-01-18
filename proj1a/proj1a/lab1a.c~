@@ -14,18 +14,6 @@
 #include <errno.h>
 #include <termios.h>
 
-void sigsev_handler(int signum) {
-    if (signum == SIGSEGV) {
-	fprintf(stderr, "Error: segmentation fault.\n");
-	exit(4);
-    }
-}
-
-void seg_fault() {
-    char* ptr = NULL;
-    *ptr = 'f';
-}
-
 int main(int argc, char** argv) {
 
     // Process all arguments
@@ -124,7 +112,9 @@ int main(int argc, char** argv) {
 		fprintf(stdout, "%c%c", '\x0D', '\x0A');
 	    }
 	    else if (input[i] == '\x04') {
-		// restore normal terminal modes and exit(0)
+		// Restore the terminal modes
+		tcsetattr(0, TCSANOW, &termios_curr);
+		exit(0);
 	    }
 	    else {
 		fprintf(stdout, "%c", input[i]);
@@ -133,9 +123,5 @@ int main(int argc, char** argv) {
 	i++;
     }
 
-
-    // Restore the terminal modes
-    tcsetattr(0, TCSANOW, &termios_curr);
-    
     exit(0);
 }
