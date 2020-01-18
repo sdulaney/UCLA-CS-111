@@ -14,28 +14,16 @@
 #include <errno.h>
 #include <termios.h>
 
-void sigsev_handler(int signum) {
-    if (signum == SIGSEGV) {
-	fprintf(stderr, "Error: segmentation fault.\n");
-	exit(4);
-    }
-}
-
-void seg_fault() {
-    char* ptr = NULL;
-    *ptr = 'f';
-}
-
 int main(int argc, char** argv) {
 
     // Process all arguments
     int c;
-    int opt_input = 0;
+/*    int opt_input = 0;
     int opt_output = 0;
     int opt_segfault = 0;
     int opt_catch = 0;
     char* arg_input;
-    char* arg_output;
+    char* arg_output;*/
     
     while (1) {
         int option_index = 0;
@@ -52,10 +40,10 @@ int main(int argc, char** argv) {
         if (c == -1)
 	    break;
 
-	const char* name = long_options[option_index].name;
+	//const char* name = long_options[option_index].name;
         switch (c) {
 	    case 0:
-		if (strcmp(name, "input") == 0) {
+/*		if (strcmp(name, "input") == 0) {
 		    opt_input = 1;
                     if (optarg)
 			arg_input = optarg;
@@ -70,7 +58,7 @@ int main(int argc, char** argv) {
 		}
 		else if (strcmp(name, "catch") == 0) {
 		    opt_catch = 1;
-		}
+		    }*/
 		break;
 	    
             case 'i':
@@ -111,16 +99,26 @@ int main(int argc, char** argv) {
     tcsetattr(0, TCSANOW, &termios_new);
 
     // Read (ASCII) input from the keyboard into a buffer
-    // TODO: Add error checking
-    char* input = char[100];
-    while (1) {
-	ssize_t rv = read(0, input, 99);
+    char input[100];
+    int i = 0;
+    while (i < 5) {
+	ssize_t rv = read(0, &input, 99);
 	if (rv == -1) {
-	    
+	    fprintf(stderr, "Error reading from file descriptor 0.\nread: %s\n", strerror(errno));
+	    exit(1);
 	}
 	for (int i = 0; i < rv; i++) {
-	    fprintf(stdout, "%c", input[i]);
+	    if (input[i] == '\x0D' || input[i] == '\x0A') {
+		fprintf(stdout, "%c%c", '\x0D', '\x0A');
+	    }
+	    else if (input[i] == '\x04') {
+		// restore normal terminal modes and exit(0)
+	    }
+	    else {
+		fprintf(stdout, "%c", input[i]);
+	    }
 	}
+	i++;
     }
 
 
