@@ -100,8 +100,7 @@ int main(int argc, char** argv) {
 
     // Read (ASCII) input from the keyboard into a buffer
     char input[100];
-    int i = 0;
-    while (i < 5) {
+    while (1) {
 	ssize_t rv = read(0, &input, 99);
 	if (rv == -1) {
 	    fprintf(stderr, "Error reading from file descriptor 0.\nread: %s\n", strerror(errno));
@@ -115,7 +114,6 @@ int main(int argc, char** argv) {
 		    fprintf(stderr, "Error writing to file descriptor 0.\nwrite: %s\n", strerror(errno));
 		    exit(1);
 		}		
-//		fprintf(stdout, "%c%c", '\x0D', '\x0A');
 	    }
 	    else if (input[i] == '\x04') {
 		// Restore the terminal modes
@@ -123,16 +121,13 @@ int main(int argc, char** argv) {
 		exit(0);
 	    }
 	    else {
-		// TODO: Use write instead and do error checking
 		ssize_t temp = write(0, &input[i], 1);
 		if (temp < 1) {              /* # bytes written may be less than arg count */
 		    fprintf(stderr, "Error writing to file descriptor 0.\nwrite: %s\n", strerror(errno));
 		    exit(1);
 		}
-		//fprintf(stdout, "%c", input[i]);
 	    }
 	}
-	i++;
     }
 
     exit(0);
