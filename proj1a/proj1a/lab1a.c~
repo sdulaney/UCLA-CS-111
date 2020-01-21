@@ -86,12 +86,15 @@ int main(int argc, char** argv) {
 	}
 	else if (rv == 0) {
 	    // Returned to child process
-	    char* args[] = {};
+	    char* args[] = {NULL};
 	    int rv = execv("/bin/bash", args);
 	    if (rv == -1) {
 		fprintf(stderr, "Error exec'ing a shell.\nexecv: %s\n", strerror(errno));
 		exit(1);
 	    }
+	    // Close unused side of pipes
+	    close(pipe_to_shell[1]);
+	    close(pipe_to_term[0]);
 	    // Redirect stdin
 	    close(0);
 	    dup(pipe_to_shell[0]);
@@ -106,7 +109,11 @@ int main(int argc, char** argv) {
 	}
 	else if (rv > 0) {
 	    // Returned to parent process
+	    // Close unused side of pipes
+	    close(pipe_to_shell[0]);
+	    close(pipe_to_term[1]);
 	    // Read (ASCII) input from the keyboard, echo it to stdout, and forward it to the shell
+	    char input[100];
 	    while (1) {
 		ssize_t rv = read(0, &input, 99);
 		if (rv == -1) {

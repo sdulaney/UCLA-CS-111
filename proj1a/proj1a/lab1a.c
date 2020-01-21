@@ -13,6 +13,7 @@
 #include <signal.h>
 #include <errno.h>
 #include <termios.h>
+#include <sys/poll.h>
 
 int main(int argc, char** argv) {
 
@@ -86,12 +87,15 @@ int main(int argc, char** argv) {
 	}
 	else if (rv == 0) {
 	    // Returned to child process
-	    char* args[] = {};
+	    char* args[] = {NULL};
 	    int rv = execv("/bin/bash", args);
 	    if (rv == -1) {
 		fprintf(stderr, "Error exec'ing a shell.\nexecv: %s\n", strerror(errno));
 		exit(1);
 	    }
+	    // Close unused side of pipes
+	    close(pipe_to_shell[1]);
+	    close(pipe_to_term[0]);
 	    // Redirect stdin
 	    close(0);
 	    dup(pipe_to_shell[0]);
@@ -106,6 +110,21 @@ int main(int argc, char** argv) {
 	}
 	else if (rv > 0) {
 	    // Returned to parent process
+	    // Close unused side of pipes
+	    close(pipe_to_shell[0]);
+	    close(pipe_to_term[1]);
+	    // Create an array of two pollfd structures, one describing the keyboard (stdin) and one describing the pipe that returns output from the shell
+	    struct pollfd fds[2];
+	    fds[0].fd = 0;
+	    fds[0].events = POLLIN;
+	    fds[1].fd = pipe_to_term[0];
+	    fds[1].events = POLLIN;
+	    int rv_poll = poll(fds, 2, 0);
+	    if (rv_poll == -1) {
+		fprintf(stderr, "Error polling for events on file descriptors 0 and %d.\npoll: %s\n", pipe_to_term[0], strerror(errno));
+		exit(1);
+	    }
+	    
 	    // Read (ASCII) input from the keyboard, echo it to stdout, and forward it to the shell
 	    char input[100];
 	    while (1) {
