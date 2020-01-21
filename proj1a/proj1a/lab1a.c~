@@ -65,33 +65,123 @@ int main(int argc, char** argv) {
     termios_new.c_lflag = 0;                  /* no processing	*/
     tcsetattr(0, TCSANOW, &termios_new);
 
-    // Read (ASCII) input from the keyboard into a buffer
-    char input[100];
-    while (1) {
-	ssize_t rv = read(0, &input, 99);
-	if (rv == -1) {
-	    fprintf(stderr, "Error reading from file descriptor 0.\nread: %s\n", strerror(errno));
+    if (opt_shell == 1) {
+	int pipe_to_shell[2];
+	int rv_pipe = pipe(pipe_to_shell);
+	if (rv_pipe == -1) {
+	    fprintf(stderr, "Error creating pipe.\npipe: %s\n", strerror(errno));
 	    exit(1);
 	}
-	for (int i = 0; i < rv; i++) {
-	    if (input[i] == '\x0D' || input[i] == '\x0A') {
-		char* output = "\x0D\x0A";
-		ssize_t temp = write(0, output, 2);
-		if (temp < 2) {               /* # bytes written may be less than arg count */
-		    fprintf(stderr, "Error writing to file descriptor 0.\nwrite: %s\n", strerror(errno));
-		    exit(1);
-		}		
+	int pipe_to_term[2];
+	rv_pipe = pipe(pipe_to_term);
+	if (rv_pipe == -1) {
+	    fprintf(stderr, "Error creating pipe.\npipe: %s\n", strerror(errno));
+	    exit(1);
+	}
+	
+	pid_t rv = fork();
+	if (rv == -1) {
+	    fprintf(stderr, "Error creating child process.\nfork: %s\n", strerror(errno));
+	    exit(1);
+	}
+	else if (rv == 0) {
+	    // Returned to child process
+	    char* args[] = {};
+	    int rv = execv("/bin/bash", args);
+	    if (rv == -1) {
+		fprintf(stderr, "Error exec'ing a shell.\nexecv: %s\n", strerror(errno));
+		exit(1);
 	    }
-	    else if (input[i] == '\x04') {
-		// Restore the terminal modes
-		tcsetattr(0, TCSANOW, &termios_curr);
-		exit(0);
-	    }
-	    else {
-		ssize_t temp = write(0, &input[i], 1);
-		if (temp < 1) {              /* # bytes written may be less than arg count */
-		    fprintf(stderr, "Error writing to file descriptor 0.\nwrite: %s\n", strerror(errno));
+	    // Redirect stdin
+	    close(0);
+	    dup(pipe_to_shell[0]);
+	    close(pipe_to_shell[0]);
+	    // Redirect stdout
+	    close(1);
+	    dup(pipe_to_term[1]);
+	    close(pipe_to_term[1]);
+	    // Redirect stderr
+	    close(2);
+	    dup(1);
+	}
+	else if (rv > 0) {
+	    // Returned to parent process
+	    // Read (ASCII) input from the keyboard, echo it to stdout, and forward it to the shell
+	    while (1) {
+		ssize_t rv = read(0, &input, 99);
+		if (rv == -1) {
+		    fprintf(stderr, "Error reading from file descriptor 0.\nread: %s\n", strerror(errno));
 		    exit(1);
+		}
+		for (int i = 0; i < rv; i++) {
+		    if (input[i] == '\x0D' || input[i] == '\x0A') {
+			// Echo to stdout
+			char* output = "\x0D\x0A";
+			ssize_t temp = write(0, output, 2);
+			if (temp < 2) {               /* # bytes written may be less than arg count */
+			    fprintf(stderr, "Error writing to file descriptor 0.\nwrite: %s\n", strerror(errno));
+			    exit(1);
+			}
+			// Forward to shell
+			char c = '\x0A';
+			temp = write(pipe_to_shell[1], &c, 1);
+			if (temp < 1) {              /* # bytes written may be less than arg count */
+			    fprintf(stderr, "Error writing to file descriptor %d.\nwrite: %s\n", pipe_to_shell[1], strerror(errno));
+			    exit(1);
+			}
+		    }
+		    else if (input[i] == '\x04') {
+			// Restore the terminal modes
+			tcsetattr(0, TCSANOW, &termios_curr);
+			exit(0);
+		    }
+		    else {
+			// Echo to stdout
+			ssize_t temp = write(0, &input[i], 1);
+			if (temp < 1) {              /* # bytes written may be less than arg count */
+			    fprintf(stderr, "Error writing to file descriptor 0.\nwrite: %s\n", strerror(errno));
+			    exit(1);
+			}
+			// Forward to shell
+			temp = write(pipe_to_shell[1], &input[i], 1);
+			if (temp < 1) {              /* # bytes written may be less than arg count */
+			    fprintf(stderr, "Error writing to file descriptor %d.\nwrite: %s\n", pipe_to_shell[1], strerror(errno));
+			    exit(1);
+			}
+		    }
+		}
+	    }
+	}
+    }
+    else {
+	// Read (ASCII) input from the keyboard into a buffer
+	char input[100];
+	while (1) {
+	    ssize_t rv = read(0, &input, 99);
+	    if (rv == -1) {
+		fprintf(stderr, "Error reading from file descriptor 0.\nread: %s\n", strerror(errno));
+		exit(1);
+	    }
+	    for (int i = 0; i < rv; i++) {
+		if (input[i] == '\x0D' || input[i] == '\x0A') {
+		    char* output = "\x0D\x0A";
+		    ssize_t temp = write(0, output, 2);
+		    if (temp < 2) {               /* # bytes written may be less than arg count */
+			fprintf(stderr, "Error writing to file descriptor 0.\nwrite: %s\n", strerror(errno));
+			exit(1);
+		    }		
+		}
+		else if (input[i] == '\x04') {
+		    // Restore the terminal modes
+		    tcsetattr(0, TCSANOW, &termios_curr);
+		    exit(0);
+		}
+		else {
+		    ssize_t temp = write(0, &input[i], 1);
+		    if (temp < 1) {              /* # bytes written may be less than arg count */
+			fprintf(stderr, "Error writing to file descriptor 0.\nwrite: %s\n", strerror(errno));
+			exit(1);
+		    }
 		}
 	    }
 	}
