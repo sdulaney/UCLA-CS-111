@@ -1,1 +1,3 @@
-abab
+bash: no job control in this shell
+[?1034hbash-4.2$ /bin/bash
+bash-4.2$ exit

@@ -12,41 +12,23 @@
 #include <fcntl.h>
 #include <signal.h>
 #include <errno.h>
-
-void sigsev_handler(int signum) {
-    if (signum == SIGSEGV) {
-	fprintf(stderr, "Error: segmentation fault.\n");
-	exit(4);
-    }
-}
-
-void seg_fault() {
-    char* ptr = NULL;
-    *ptr = 'f';
-}
+#include <termios.h>
+#include <sys/poll.h>
 
 int main(int argc, char** argv) {
 
     // Process all arguments
     int c;
-    int opt_input = 0;
-    int opt_output = 0;
-    int opt_segfault = 0;
-    int opt_catch = 0;
-    char* arg_input;
-    char* arg_output;
+    int opt_shell = 0;
     
     while (1) {
         int option_index = 0;
         static struct option long_options[] = {
-	    {"input",   required_argument, 0,  0 },
-	    {"output",  required_argument, 0,  0 },
-	    {"segfault",      no_argument, 0,  0 },
-	    {"catch",         no_argument, 0,  0 },
+	    {"shell",         no_argument, 0,  0 },
             {0,         0,                 0,  0 }
         };
 
-        c = getopt_long(argc, argv, "i:o:sc",
+        c = getopt_long(argc, argv, "s",
 	    long_options, &option_index);
         if (c == -1)
 	    break;
@@ -54,42 +36,17 @@ int main(int argc, char** argv) {
 	const char* name = long_options[option_index].name;
         switch (c) {
 	    case 0:
-		if (strcmp(name, "input") == 0) {
-		    opt_input = 1;
-                    if (optarg)
-			arg_input = optarg;
-		}
-		else if (strcmp(name, "output") == 0) {
-		    opt_output = 1;
-                    if (optarg)
-			arg_output = optarg;
-		}
-		else if (strcmp(name, "segfault") == 0) {
-		    opt_segfault = 1;
-		}
-		else if (strcmp(name, "catch") == 0) {
-		    opt_catch = 1;
+		if (strcmp(name, "shell") == 0) {
+		    opt_shell = 1;
 		}
 		break;
-	    
-            case 'i':
-		printf("option i with value '%s'\n", optarg);
-		break;
-
-            case 'o':
-		printf("option o with value '%s'\n", optarg);
-		break;
-
+		
             case 's':
 		printf("option s\n");
 		break;
 
-            case 'c':
-		printf("option c\n");
-		break;
-
             case '?':
-		fprintf(stderr, "usage: ./lab0 [OPTION]...\nvalid options: --input=filename, --output=filename, --segfault, --catch\n");
+		fprintf(stderr, "usage: ./lab1a [OPTION]\nvalid option(s): --shell\n");
 		exit(1);
 		break;
 
@@ -98,53 +55,192 @@ int main(int argc, char** argv) {
         }
     }
 
-    // Do any file redirection
-    if (opt_input) {
-	int ifd = open(arg_input, O_RDONLY);
-	if (ifd == -1) {
-	    fprintf(stderr, "Error (option '--input'): the file %s could not be opened.\nopen: %s\n", arg_input, strerror(errno));
-	    exit(2);
+    // Get and save the current terminal modes
+    struct termios termios_curr;
+    tcgetattr(0, &termios_curr);
+
+    // Put the keyboard into character-at-a-time, no-echo mode
+    struct termios termios_new = termios_curr;
+    termios_new.c_iflag = ISTRIP;             /* only lower 7 bits	*/
+    termios_new.c_oflag = 0;                  /* no processing	*/
+    termios_new.c_lflag = 0;                  /* no processing	*/
+    tcsetattr(0, TCSANOW, &termios_new);
+
+    if (opt_shell == 1) {
+	int pipe_to_shell[2];
+	int rv_pipe = pipe(pipe_to_shell);
+	if (rv_pipe == -1) {
+	    fprintf(stderr, "Error creating pipe.\npipe: %s\n", strerror(errno));
+	    exit(1);
 	}
-	if (ifd >= 0) {
+	int pipe_to_term[2];
+	rv_pipe = pipe(pipe_to_term);
+	if (rv_pipe == -1) {
+	    fprintf(stderr, "Error creating pipe.\npipe: %s\n", strerror(errno));
+	    exit(1);
+	}
+	
+	pid_t rv = fork();
+	if (rv == -1) {
+	    fprintf(stderr, "Error creating child process.\nfork: %s\n", strerror(errno));
+	    exit(1);
+	}
+	else if (rv == 0) {
+	    // Returned to child process
+	    char* args[] = {NULL};
+	    int rv = execv("/bin/bash", args);
+	    if (rv == -1) {
+		fprintf(stderr, "Error exec'ing a shell.\nexecv: %s\n", strerror(errno));
+		exit(1);
+	    }
+	    // Close unused side of pipes
+	    close(pipe_to_shell[1]);
+	    close(pipe_to_term[0]);
+	    // Redirect stdin
 	    close(0);
-	    dup(ifd);
-	    close(ifd);
-	}
-    }
-    if (opt_output) {
-	int ofd = creat(arg_output, 0666);
-	if (ofd == -1) {
-            fprintf(stderr, "Error (option '--output'): the file %s could not be created.\ncreat: %s\n", arg_output, strerror(errno));
-            exit(3);
-        }
-	if (ofd >= 0) {
+	    dup(pipe_to_shell[0]);
+	    close(pipe_to_shell[0]);
+	    // Redirect stdout
 	    close(1);
-	    dup(ofd);
-	    close(ofd);
+	    dup(pipe_to_term[1]);
+	    close(pipe_to_term[1]);
+	    // Redirect stderr
+	    close(2);
+	    dup(1);
+	}
+	else if (rv > 0) {
+	    // Returned to parent process
+	    // Close unused side of pipes
+	    close(pipe_to_shell[0]);
+	    close(pipe_to_term[1]);
+	    // Create an array of two pollfd structures, one describing the keyboard (stdin) and one describing the pipe that returns output from the shell
+	    struct pollfd fds[2];
+	    fds[0].fd = 0;
+	    fds[0].events = POLLIN;
+	    fds[1].fd = pipe_to_term[0];
+	    fds[1].events = POLLIN;
+	    while (1) {
+		int rv_poll = poll(fds, 2, 0);
+		if (rv_poll == -1) {
+		    fprintf(stderr, "Error polling for events on file descriptors 0 and %d.\npoll: %s\n", pipe_to_term[0], strerror(errno));
+		    exit(1);
+		}
+		if (rv_poll > 0) {
+		    // TODO: deal with POLLERR, POLLHUP
+		    if (fds[0].revents & POLLIN) {
+			// Read stdin
+			// Read (ASCII) input from the keyboard, echo it to stdout, and forward it to the shell
+			char input[100];
+			while (1) {
+			    ssize_t rv = read(0, &input, 99);
+			    if (rv == -1) {
+				fprintf(stderr, "Error reading from file descriptor 0.\nread: %s\n", strerror(errno));
+				exit(1);
+			    }
+			    for (int i = 0; i < rv; i++) {
+				if (input[i] == '\x0D' || input[i] == '\x0A') {
+				    // Echo to stdout
+				    char* output = "\x0D\x0A";
+				    ssize_t temp = write(0, output, 2);
+				    if (temp < 2) {               /* # bytes written may be less than arg count */
+					fprintf(stderr, "Error writing to file descriptor 0.\nwrite: %s\n", strerror(errno));
+					exit(1);
+				    }
+				    // Forward to shell
+				    char c = '\x0A';
+				    temp = write(pipe_to_shell[1], &c, 1);
+				    if (temp < 1) {              /* # bytes written may be less than arg count */
+					fprintf(stderr, "Error writing to file descriptor %d.\nwrite: %s\n", pipe_to_shell[1], strerror(errno));
+					exit(1);
+				    }
+				}
+				else if (input[i] == '\x04') {
+				    // Restore the terminal modes
+				    tcsetattr(0, TCSANOW, &termios_curr);
+				    exit(0);
+				}
+				else {
+				    // Echo to stdout
+				    ssize_t temp = write(0, &input[i], 1);
+				    if (temp < 1) {              /* # bytes written may be less than arg count */
+					fprintf(stderr, "Error writing to file descriptor 0.\nwrite: %s\n", strerror(errno));
+					exit(1);
+				    }
+				    // Forward to shell
+				    temp = write(pipe_to_shell[1], &input[i], 1);
+				    if (temp < 1) {              /* # bytes written may be less than arg count */
+					fprintf(stderr, "Error writing to file descriptor %d.\nwrite: %s\n", pipe_to_shell[1], strerror(errno));
+					exit(1);
+				    }
+				}
+			    }
+			}
+		        }
+		    }
+		    if (fds[1].revents & POLLIN) {
+			// Read output from shell
+			char shell_out[512];
+			while (1) {
+			    ssize_t rv_shell_out = read(pipe_to_term[0], &shell_out, 511);
+			    if (rv_shell_out == -1) {
+				fprintf(stderr, "Error reading from file descriptor %d.\nread: %s\n", pipe_to_term[0], strerror(errno));
+				exit(1);
+			    }
+			    for (int i = 0; i < rv_shell_out; i++) {
+				if (shell_out[i] == '\x0A') {
+				    char* output = "\x0D\x0A";
+				    ssize_t temp = write(0, output, 2);
+                                    if (temp < 2) {               /* # bytes written may be less than arg count */
+                                        fprintf(stderr, "Error writing to file descriptor 0.\nwrite: %s\n", strerror(errno));
+                                        exit(1);
+                                    }
+				}
+				else {
+				    ssize_t temp = write(0, &shell_out[i], 1);
+				    if (temp < 1) {              /* # bytes written may be less than arg count */
+                                        fprintf(stderr, "Error writing to file descriptor 0.\nwrite: %s\n", strerror(errno));
+                                        exit(1);
+                                    }
+				}
+			    }
+			}
+		    }
+		}
+	    }
+    }
+    else {
+	// Read (ASCII) input from the keyboard into a buffer
+	char input[100];
+	while (1) {
+	    ssize_t rv = read(0, &input, 99);
+	    if (rv == -1) {
+		fprintf(stderr, "Error reading from file descriptor 0.\nread: %s\n", strerror(errno));
+		exit(1);
+	    }
+	    for (int i = 0; i < rv; i++) {
+		if (input[i] == '\x0D' || input[i] == '\x0A') {
+		    char* output = "\x0D\x0A";
+		    ssize_t temp = write(0, output, 2);
+		    if (temp < 2) {               /* # bytes written may be less than arg count */
+			fprintf(stderr, "Error writing to file descriptor 0.\nwrite: %s\n", strerror(errno));
+			exit(1);
+		    }		
+		}
+		else if (input[i] == '\x04') {
+		    // Restore the terminal modes
+		    tcsetattr(0, TCSANOW, &termios_curr);
+		    exit(0);
+		}
+		else {
+		    ssize_t temp = write(0, &input[i], 1);
+		    if (temp < 1) {              /* # bytes written may be less than arg count */
+			fprintf(stderr, "Error writing to file descriptor 0.\nwrite: %s\n", strerror(errno));
+			exit(1);
+		    }
+		}
+	    }
 	}
     }
 
-    // Register the signal handler
-    if (opt_catch) {
-	signal(SIGSEGV, sigsev_handler);
-    }
-
-    // Cause the segfault
-    if (opt_segfault) {
-	seg_fault();
-    }
-
-    // Copy STDIN to STDOUT 
-    int buf;
-    while (1) {
-	int temp = read(0, &buf, 1);
-
-	// EOF
-	if (temp == 0) {
-	    break;
-	}
-
-	write(1, &buf, 1);
-    }
     exit(0);
 }
