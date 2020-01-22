@@ -87,12 +87,6 @@ int main(int argc, char** argv) {
 	}
 	else if (rv == 0) {
 	    // Returned to child process
-	    char* args[] = {NULL};
-	    int rv = execv("/bin/bash", args);
-	    if (rv == -1) {
-		fprintf(stderr, "Error exec'ing a shell.\nexecv: %s\n", strerror(errno));
-		exit(1);
-	    }
 	    // Close unused side of pipes
 	    close(pipe_to_shell[1]);
 	    close(pipe_to_term[0]);
@@ -107,6 +101,12 @@ int main(int argc, char** argv) {
 	    // Redirect stderr
 	    close(2);
 	    dup(1);
+	    char* args[] = {"/bin/bash", NULL};
+	    int rv = execv("/bin/bash", args);
+	    if (rv == -1) {
+		fprintf(stderr, "Error exec'ing a shell.\nexecv: %s\n", strerror(errno));
+		exit(1);
+	    }
 	}
 	else if (rv > 0) {
 	    // Returned to parent process
@@ -117,8 +117,10 @@ int main(int argc, char** argv) {
 	    struct pollfd fds[2];
 	    fds[0].fd = 0;
 	    fds[0].events = POLLIN;
+	    fds[0].revents = 0;
 	    fds[1].fd = pipe_to_term[0];
 	    fds[1].events = POLLIN;
+	    fds[1].revents = 0;
 	    while (1) {
 		int rv_poll = poll(fds, 2, 0);
 		if (rv_poll == -1) {
@@ -127,11 +129,13 @@ int main(int argc, char** argv) {
 		}
 		if (rv_poll > 0) {
 		    // TODO: deal with POLLERR, POLLHUP
+		    /*if (fds[0].revents & POLLERR || fds[1].revents & POLLERR) {
+			
+		      }*/
 		    if (fds[0].revents & POLLIN) {
 			// Read stdin
 			// Read (ASCII) input from the keyboard, echo it to stdout, and forward it to the shell
 			char input[100];
-			while (1) {
 			    ssize_t rv = read(0, &input, 99);
 			    if (rv == -1) {
 				fprintf(stderr, "Error reading from file descriptor 0.\nread: %s\n", strerror(errno));
@@ -175,12 +179,10 @@ int main(int argc, char** argv) {
 				}
 			    }
 			}
-		        }
 		    }
 		    if (fds[1].revents & POLLIN) {
 			// Read output from shell
 			char shell_out[512];
-			while (1) {
 			    ssize_t rv_shell_out = read(pipe_to_term[0], &shell_out, 511);
 			    if (rv_shell_out == -1) {
 				fprintf(stderr, "Error reading from file descriptor %d.\nread: %s\n", pipe_to_term[0], strerror(errno));
@@ -203,7 +205,6 @@ int main(int argc, char** argv) {
                                     }
 				}
 			    }
-			}
 		    }
 		}
 	    }
