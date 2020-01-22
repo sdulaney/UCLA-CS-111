@@ -14,28 +14,6 @@
 #include <errno.h>
 #include <termios.h>
 #include <sys/poll.h>
-#include <sys/wait.h>
-
-int pipe_to_shell[2];
-int closed_write_pipe_to_shell = 0;
-
-void sigpipe_handler(int signum) {
-    if (signum == SIGPIPE) {
-	// Close the pipe to the shell
-	close(pipe_to_shell[1]);
-	closed_write_pipe_to_shell = 1;
-    }
-}
-
-void print_shell_exit_info(pid_t pid) {
-    int status = 0;
-    if (waitpid(pid, &status, 0) == -1) {
-	fprintf(stderr, "Error waiting for process to change state.\nwaitpid: %s\n", strerror(errno));
-	exit(1);
-    }
-    fprintf(stderr, "SHELL EXIT SIGNAL=%d STATUS=%d", status & 0x007f, status & 0xff00);
-    exit(0);
-}
 
 int main(int argc, char** argv) {
 
@@ -89,6 +67,7 @@ int main(int argc, char** argv) {
     tcsetattr(0, TCSANOW, &termios_new);
 
     if (opt_shell == 1) {
+	int pipe_to_shell[2];
 	int rv_pipe = pipe(pipe_to_shell);
 	if (rv_pipe == -1) {
 	    fprintf(stderr, "Error creating pipe.\npipe: %s\n", strerror(errno));
@@ -131,7 +110,6 @@ int main(int argc, char** argv) {
 	}
 	else if (pid > 0) {
 	    // Returned to parent process
-	    signal(SIGPIPE, sigpipe_handler);
 	    // Close unused side of pipes
 	    close(pipe_to_shell[0]);
 	    close(pipe_to_term[1]);
@@ -149,7 +127,7 @@ int main(int argc, char** argv) {
 		    fprintf(stderr, "Error polling for events on file descriptors 0 and %d.\npoll: %s\n", pipe_to_term[0], strerror(errno));
 		    exit(1);
 		}
-		if (!closed_write_pipe_to_shell && rv_poll > 0) {
+		if (rv_poll > 0) {
 		    // TODO: deal with POLLERR, POLLHUP
 		    /*if (fds[0].revents & POLLERR || fds[1].revents & POLLERR) {
 			
@@ -188,8 +166,7 @@ int main(int argc, char** argv) {
                                         exit(1);
                                     }
 				    // Close the pipe to the shell
-                                    close(pipe_to_shell[1]);
-				    closed_write_pipe_to_shell = 1;
+				    close(pipe_to_shell[1]);
 				    // Restore the terminal modes
 				    tcsetattr(0, TCSANOW, &termios_curr);
 				    exit(0);
@@ -224,18 +201,10 @@ int main(int argc, char** argv) {
 			    }
 			}
 		    }
-		    if (fds[1].revents & POLLERR) {
-			// Close the pipe to the shell
-			close(pipe_to_shell[1]);
-			closed_write_pipe_to_shell = 1;
-		    }
 		    if (fds[1].revents & POLLIN) {
 			// Read output from shell
 			char shell_out[512];
 			    ssize_t rv_shell_out = read(pipe_to_term[0], &shell_out, 511);
-			    if (rv_shell_out == 0 && closed_write_pipe_to_shell) {     // EOF
-				print_shell_exit_info(pid);
-			    }
 			    if (rv_shell_out == -1) {
 				fprintf(stderr, "Error reading from file descriptor %d.\nread: %s\n", pipe_to_term[0], strerror(errno));
 				exit(1);

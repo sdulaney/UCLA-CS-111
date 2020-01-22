@@ -1,1 +1,1 @@
-scp -r stewart@lnxsrv09.seas.ucla.edu:/u/cs/ugrad/stewart/111/proj1a .
+scp -r stewart@lnxsrv05.seas.ucla.edu:/u/cs/ugrad/stewart/111/proj1a .
