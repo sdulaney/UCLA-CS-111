@@ -4,45 +4,17 @@ ID: 904-064-791
 
 Included files:
 
-lab0.c:
-- a program that copies its standard input to its standard output
+lab1a.c:
+- a multi-process program that implements a telnet-like client and server
+- this is achieved by using character-at-a-time/full duplex terminal I/O, polled I/O, and passing input and output between two processes over pipes 
 - supports the following optional command line options:
-  --input=filename ... use the specified file as standard input (argument filename required)
-  --output=filename ... create the specified file and use it as standard output (argument filename required)
-  --segfault ... force a segmentation fault
-  --catch catch the segmentation fault and log an error message
+  --shell ... pass input/output between the terminal and a shell
 - summary of exit codes:
-  0 ... copy successful
-  1 ... unrecognized argument
-  2 ... unable to open input file
-  3 ... unable to open output file
-  4 ... caught and received SIGSEGV
+  0 ... normal execution, shutdown on ^D
+  1 ... unrecognized argument or system call failure
 
 Makefile:
 - supports the following targets:
-  build (default) ... build the lab0 executable with the -g, -Wall, and -Wextra options
-  check ... runs a quick smoke-test on whether or not the program seems to work, supports the required arguments, and properly reports success or failure
+  build (default) ... build the lab1a executable with the -g, -Wall, and -Wextra options
   clean ...  delete all files created by the Makefile
   dist ... build the distribution tarball
-
-backtrace.png:
-- screenshot of running program with the --segfault option under gdb and getting a stack backtrace
-
-breakpoint.png:
-- screenshot of running program with the --segfault option under gdb after setting a breakpoint at the assignment that causes the segmentation fault, and inspecting the pointer to confirm that it is NULL
-
-Smoke-test cases (check target of Makefile):
-- correctly copy input to output
-- correctly implements --input
-- correctly implements --output
-- implements combined --input + --output
-- correct handling of un-openable/un-creatable output file
-- correct handling of non-existent/un-openable input file
-- correct handling of invalid arguments
-- generate (and die from) SIGSEGV
-- catch and report SIGSEGV
-
-Testing methodology:
-- verify the return code
-- verify input matches output (on successful runs)
-- verify an error message has been printed to stderr (on unsuccessful runs)

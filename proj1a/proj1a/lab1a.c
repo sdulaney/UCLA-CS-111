@@ -9,7 +9,6 @@
 #include <unistd.h>
 #include <getopt.h>
 #include <string.h>
-#include <fcntl.h>
 #include <signal.h>
 #include <errno.h>
 #include <termios.h>
@@ -29,17 +28,11 @@ void print_shell_exit_info(pid_t pid) {
 	exit(1);
     }
     fprintf(stderr, "SHELL EXIT SIGNAL=%d STATUS=%d", status & 0x007f, (status & 0xff00) >> 8);
-//    fprintf(stderr, "status=%d", status);
-//    fprintf(stderr, "sizeof(int)=%ld", sizeof(int));
-//    fprintf(stderr, "SHELL EXIT SIGNAL=%d STATUS=%d", status & 0xff00, status & 0x007f);
     exit(0);
 }
 
 void sigpipe_handler(int signum) {
     if (signum == SIGPIPE) {
-	// Close the pipe to the shell
-//	close(pipe_to_shell[1]);
-//	closed_write_pipe_to_shell = 1;
 	print_shell_exit_info(pid);
     }
 }
@@ -164,10 +157,6 @@ int main(int argc, char** argv) {
 		    exit(1);
 		}
 		if (rv_poll > 0) {
-		    // TODO: deal with POLLERR, POLLHUP
-		    /*if (fds[0].revents & POLLERR || fds[1].revents & POLLERR) {
-			
-		      }*/
 		    if (fds[0].revents & POLLIN) {
 			// Read stdin
 			// Read (ASCII) input from the keyboard, echo it to stdout, and forward it to the shell
@@ -307,6 +296,5 @@ int main(int argc, char** argv) {
 	    }
 	}
     }
-
     exit(0);
 }
