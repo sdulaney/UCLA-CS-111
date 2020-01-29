@@ -92,7 +92,7 @@ int main(int argc, char** argv) {
 		break;
 
             case '?':
-		fprintf(stderr, "usage: ./lab1b-client [OPTION]...\nvalid option(s): ----port=port, --log=filename\n");
+		fprintf(stderr, "usage: ./lab1b-client [OPTION]...\nvalid option(s): ----port=port, --log=filename, --compress\n");
 		exit(1);
 		break;
 
@@ -284,35 +284,8 @@ int main(int argc, char** argv) {
 	    print_shell_exit_info(pid);
     }
     else {
-	// Read (ASCII) input from the keyboard into a buffer
-	char input[100];
-	while (1) {
-	    ssize_t rv = read(0, &input, 99);
-	    if (rv == -1) {
-		fprintf(stderr, "Error reading from file descriptor 0.\nread: %s\n", strerror(errno));
-		exit(1);
-	    }
-	    for (int i = 0; i < rv; i++) {
-		if (input[i] == '\x0D' || input[i] == '\x0A') {
-		    char* output = "\x0D\x0A";
-		    ssize_t temp = write(0, output, 2);
-		    if (temp < 2) {               /* # bytes written may be less than arg count */
-			fprintf(stderr, "Error writing to file descriptor 0.\nwrite: %s\n", strerror(errno));
-			exit(1);
-		    }		
-		}
-		else if (input[i] == '\x04') {
-		    exit(0);
-		}
-		else {
-		    ssize_t temp = write(0, &input[i], 1);
-		    if (temp < 1) {              /* # bytes written may be less than arg count */
-			fprintf(stderr, "Error writing to file descriptor 0.\nwrite: %s\n", strerror(errno));
-			exit(1);
-		    }
-		}
-	    }
-	}
+	fprintf(stderr, "Error: the option --port=port is mandatory.\nusage: ./lab1b-client [OPTION]...\nvalid option(s): ----port=port, --log=filename, --compress\n");
+        exit(1);
     }
     exit(0);
 }
