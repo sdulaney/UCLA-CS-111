@@ -3,7 +3,7 @@
   EMAIL: sdulaney@ucla.edu
   ID: 904-064-791
 
-  File: lab1b-server.c
+  File: lab1b-client.c
  */
 
 #include <stdio.h>
@@ -51,17 +51,15 @@ int main(int argc, char** argv) {
     int c;
     int opt_port = 0;
 //    char* arg_port;
-    int opt_compress = 0;
     
     while (1) {
         int option_index = 0;
         static struct option long_options[] = {
 	    {"port",    required_argument, 0,  0 },
-	    {"compress",      no_argument, 0,  0 },
             {0,         0,                 0,  0 }
         };
 
-        c = getopt_long(argc, argv, "p:c",
+        c = getopt_long(argc, argv, "p:",
 	    long_options, &option_index);
         if (c == -1)
 	    break;
@@ -74,9 +72,6 @@ int main(int argc, char** argv) {
 //		    if (optarg)
 //			arg_port = optarg;
 		}
-		if (strcmp(name, "compress") == 0) {
-                    opt_compress = 1;
-                }
 		break;
 		
             case 'p':
@@ -84,7 +79,7 @@ int main(int argc, char** argv) {
 		break;
 
             case '?':
-		fprintf(stderr, "usage: ./lab1b-server [OPTION]...\nvalid option(s): ----port=port\n");
+		fprintf(stderr, "usage: ./lab1b-client [OPTION]...\nvalid option(s): ----port=port\n");
 		exit(1);
 		break;
 
@@ -105,7 +100,7 @@ int main(int argc, char** argv) {
 
     atexit(reset_input_mode);
 
-    if (opt_port == 1) {
+      if (opt_port == 1) {
 	int rv_pipe = pipe(pipe_to_shell);
 	if (rv_pipe == -1) {
 	    fprintf(stderr, "Error creating pipe.\npipe: %s\n", strerror(errno));

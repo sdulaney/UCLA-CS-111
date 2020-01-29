@@ -2,6 +2,8 @@
   NAME: Stewart Dulaney
   EMAIL: sdulaney@ucla.edu
   ID: 904-064-791
+
+  File: lab1b-client.c
  */
 
 #include <stdio.h>
@@ -47,16 +49,22 @@ int main(int argc, char** argv) {
 
     // Process all arguments
     int c;
-    int opt_shell = 0;
+    int opt_port = 0;
+//    char* arg_port;
+    int opt_log = 0;
+//    char* arg_log;
+    int opt_compress = 0;
     
     while (1) {
         int option_index = 0;
         static struct option long_options[] = {
-	    {"shell",         no_argument, 0,  0 },
+	    {"port",    required_argument, 0,  0 },
+	    {"log",     required_argument, 0,  0 },
+	    {"compress",      no_argument, 0,  0 },
             {0,         0,                 0,  0 }
         };
 
-        c = getopt_long(argc, argv, "s",
+        c = getopt_long(argc, argv, "p:l:c",
 	    long_options, &option_index);
         if (c == -1)
 	    break;
@@ -64,17 +72,27 @@ int main(int argc, char** argv) {
 	const char* name = long_options[option_index].name;
         switch (c) {
 	    case 0:
-		if (strcmp(name, "shell") == 0) {
-		    opt_shell = 1;
+		if (strcmp(name, "port") == 0) {
+		    opt_port = 1;
+//		    if (optarg)
+//			arg_port = optarg;
 		}
+		if (strcmp(name, "log") == 0) {
+                    opt_log = 1;
+//                  if (optarg)
+//                      arg_log = optarg;
+                }
+		if (strcmp(name, "compress") == 0) {
+                    opt_compress = 1;
+                }
 		break;
 		
-            case 's':
-		printf("option s\n");
+            case 'p':
+		printf("option p\n");
 		break;
 
             case '?':
-		fprintf(stderr, "usage: ./lab1a [OPTION]\nvalid option(s): --shell\n");
+		fprintf(stderr, "usage: ./lab1b-client [OPTION]...\nvalid option(s): ----port=port, --log=filename\n");
 		exit(1);
 		break;
 
@@ -95,7 +113,7 @@ int main(int argc, char** argv) {
 
     atexit(reset_input_mode);
 
-    if (opt_shell == 1) {
+      if (opt_port == 1) {
 	int rv_pipe = pipe(pipe_to_shell);
 	if (rv_pipe == -1) {
 	    fprintf(stderr, "Error creating pipe.\npipe: %s\n", strerror(errno));

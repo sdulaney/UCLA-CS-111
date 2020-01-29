@@ -8,7 +8,7 @@ lab1b-client:
 	gcc lab1b-client.c -o lab1b-client -g -Wall -Wextra
 
 lab1b-server:
-	gcc lab1b-server.c -o lab1b-server -g -Wall -Wextra
+        gcc lab1b-server.c -o lab1b-server -g -Wall -Wextra
 
 clean:
 	-rm lab1b-client
