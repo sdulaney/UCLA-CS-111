@@ -21,6 +21,7 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <fcntl.h>
+#include "zlib.h"
 
 struct termios termios_curr;
 int pipe_to_shell[2];

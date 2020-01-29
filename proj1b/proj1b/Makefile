@@ -5,10 +5,10 @@
 build: lab1b-client lab1b-server
 
 lab1b-client:
-	gcc lab1b-client.c -o lab1b-client -g -Wall -Wextra
+	gcc lab1b-client.c -o lab1b-client -g -Wall -Wextra -lz
 
 lab1b-server:
-	gcc lab1b-server.c -o lab1b-server -g -Wall -Wextra
+	gcc lab1b-server.c -o lab1b-server -g -Wall -Wextra -lz
 
 clean:
 	-rm lab1b-client
