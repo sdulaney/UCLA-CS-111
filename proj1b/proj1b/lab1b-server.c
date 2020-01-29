@@ -16,6 +16,9 @@
 #include <termios.h>
 #include <sys/poll.h>
 #include <sys/wait.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
 
 struct termios termios_curr;
 int pipe_to_shell[2];
@@ -71,8 +74,8 @@ int main(int argc, char** argv) {
 	    case 0:
 		if (strcmp(name, "port") == 0) {
 		    opt_port = 1;
-//		    if (optarg)
-//			arg_port = optarg;
+		    if (optarg)
+			arg_port = optarg;
 		}
 		if (strcmp(name, "compress") == 0) {
                     opt_compress = 1;
@@ -106,6 +109,32 @@ int main(int argc, char** argv) {
     atexit(reset_input_mode);
 
     if (opt_port == 1) {
+	// Socket set up
+	int sockfd, newsockfd, portno, clilen;
+	char buffer[256];
+	struct sockaddr_in serv_addr, cli_addr;
+	sockfd = socket(AF_INET, SOCK_STREAM, 0);
+	if (sockfd < 0) {
+	    fprintf(stderr, "Error opening socket.\nsocket: %s\n", strerror(errno));
+            exit(1);
+	}
+	bzero((char *) &serv_addr, sizeof(serv_addr));
+	portno = atoi(arg_port);
+	serv_addr.sin_family = AF_INET;
+	serv_addr.sin_addr.s_addr = INADDR_ANY;
+	serv_addr.sin_port = htons(portno);
+	if (bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
+	    fprintf(stderr, "Error on binding.\nbind: %s\n", strerror(errno));
+            exit(1);
+	}
+	listen(sockfd, 5);
+	clilen = sizeof(cli_addr);
+	newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
+	if (newsockfd < 0) {
+	    fprintf(stderr, "Error on accept.\naccept: %s\n", strerror(errno));
+            exit(1);
+	}
+	
 	int rv_pipe = pipe(pipe_to_shell);
 	if (rv_pipe == -1) {
 	    fprintf(stderr, "Error creating pipe.\npipe: %s\n", strerror(errno));

@@ -114,6 +114,9 @@ int main(int argc, char** argv) {
     atexit(reset_input_mode);
 
       if (opt_port == 1) {
+	// Socket set up
+	
+	  
 	int rv_pipe = pipe(pipe_to_shell);
 	if (rv_pipe == -1) {
 	    fprintf(stderr, "Error creating pipe.\npipe: %s\n", strerror(errno));

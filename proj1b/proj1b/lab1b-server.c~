@@ -276,7 +276,7 @@ int main(int argc, char** argv) {
 	    print_shell_exit_info(pid);
     }
     else {
-	fprintf(stderr, "usage: ./lab1b-server [OPTION]...\nvalid option(s): ----port=port, --compress\n");
+	fprintf(stderr, "Error: the option --port=port is mandatory.\nusage: ./lab1b-server [OPTION]...\nvalid option(s): ----port=port, --compress\n");
         exit(1);
     }
     exit(0);
