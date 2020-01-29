@@ -1,0 +1,20 @@
+NAME: Stewart Dulaney
+EMAIL: sdulaney@ucla.edu
+ID: 904-064-791
+
+Included files:
+
+lab1a.c:
+- a multi-process program that implements a telnet-like client and server
+- this is achieved by using character-at-a-time/full duplex terminal I/O, polled I/O, and passing input and output between two processes over pipes 
+- supports the following optional command line options:
+  --shell ... pass input/output between the terminal and a shell
+- summary of exit codes:
+  0 ... normal execution, shutdown on ^D
+  1 ... unrecognized argument or system call failure
+
+Makefile:
+- supports the following targets:
+  build (default) ... build the lab1a executable with the -g, -Wall, and -Wextra options
+  clean ...  delete all files created by the Makefile
+  dist ... build the distribution tarball

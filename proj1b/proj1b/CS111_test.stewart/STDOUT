@@ -1,0 +1,3 @@
+echo $SHELL
+/bin/bash
+exit 6
