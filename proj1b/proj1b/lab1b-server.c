@@ -25,6 +25,7 @@ int pipe_to_shell[2];
 int closed_write_pipe_to_shell = 0;
 int eof_from_shell = 0;
 pid_t pid = 0;
+int newsockfd;
 
 void print_shell_exit_info(pid_t pid) {
     int status = 0;
@@ -33,6 +34,7 @@ void print_shell_exit_info(pid_t pid) {
 	exit(1);
     }
     fprintf(stderr, "SHELL EXIT SIGNAL=%d STATUS=%d", status & 0x007f, (status & 0xff00) >> 8);
+    close(newsockfd);
     exit(0);
 }
 
@@ -110,7 +112,7 @@ int main(int argc, char** argv) {
 
     if (opt_port == 1) {
 	// Socket set up
-	int sockfd, newsockfd, portno;
+	int sockfd, portno;
 	socklen_t clilen;
 //	char buffer[256];
 	struct sockaddr_in serv_addr, cli_addr;
@@ -210,6 +212,13 @@ int main(int argc, char** argv) {
 				fprintf(stderr, "Error reading from file descriptor %d.\nread: %s\n", fds[0].fd, strerror(errno));
 				exit(1);
 			    }
+			    else if (rv == 0) {
+				// Client exited - EOF
+				// Close the pipe to the shell
+				close(pipe_to_shell[1]);
+                                closed_write_pipe_to_shell = 1;
+			    }
+			    else {
 			    for (int i = 0; i < rv; i++) {
 				if (input[i] == '\x04') {
 				    // Close the pipe to the shell
@@ -232,8 +241,14 @@ int main(int argc, char** argv) {
 				    }
 				}
 			    }
+			    }
 			}
 		    }
+		    if (fds[0].revents & POLLERR || fds[0].revents & POLLHUP) {
+                        // Close the pipe to the shell
+                        close(pipe_to_shell[1]);
+                        closed_write_pipe_to_shell = 1;
+                    }
 		    if (fds[1].revents & POLLERR || fds[1].revents & POLLHUP) {
 			// Close the pipe to the shell
 			close(pipe_to_shell[1]);

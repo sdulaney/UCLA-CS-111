@@ -1,0 +1,3 @@
+Error: the option --port=port is mandatory.
+usage: ./lab1b-client [OPTION]...
+valid option(s): ----port=port, --log=filename, --compress
