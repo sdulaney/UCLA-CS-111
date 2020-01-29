@@ -23,6 +23,8 @@
 #include <fcntl.h>
 #include "zlib.h"
 
+#define CHUNK 16384
+
 struct termios termios_curr;
 int pipe_to_shell[2];
 int server_exited = 0;
@@ -40,7 +42,7 @@ void print_shell_exit_info(pid_t pid) {
     exit(0);
 }
 
-void print_log(int sent, int fd, char* buf, int count) {
+void print_log(int sent, int fd, unsigned char* buf, int count) {
     if (sent) {
 	dprintf(fd, "SENT %d bytes: %s", count, buf);
     }
@@ -58,6 +60,45 @@ void sigpipe_handler(int signum) {
 void reset_input_mode() {
     // Restore the terminal modes
     tcsetattr(0, TCSANOW, &termios_curr);
+}
+
+void def_and_write(int fd, unsigned char* buf, int nbytes, int level) {
+    int ret;
+    int flush = Z_NO_FLUSH;
+    unsigned have;
+    z_stream strm;
+//    unsigned char in[CHUNK];
+    unsigned char out[CHUNK];
+
+    /* allocate deflate state */
+    strm.zalloc = Z_NULL;
+    strm.zfree = Z_NULL;
+    strm.opaque = Z_NULL;
+    ret = deflateInit(&strm, level);
+    if (ret != Z_OK)
+	fprintf(stderr, "Error: deflateInit did not return Z_OK.");
+    strm.avail_in = nbytes;
+    strm.next_in = buf;
+    do {
+	strm.avail_out = CHUNK;
+        strm.next_out = out;
+        ret = deflate(&strm, flush);    /* no bad return value */
+	if (ret == Z_STREAM_ERROR)
+	    fprintf(stderr, "Error: deflate returned Z_STREAM_ERROR.");
+        have = CHUNK - strm.avail_out;
+	if (write(fd, out, have) < 0) {
+	    fprintf(stderr, "Error: error writing deflated output to file descriptor.");
+	    (void)deflateEnd(&strm);
+	    exit(1);
+	}
+    } while (strm.avail_out == 0);
+    if (strm.avail_in != 0)
+	fprintf(stderr, "Error: strm.avail_out == 0.");
+    if (ret != Z_STREAM_END)
+	fprintf(stderr, "Error: ret != Z_STREAM_END.");
+    // TODO: Add logging
+     /* clean up */
+     (void)deflateEnd(&strm);
 }
 
 int main(int argc, char** argv) {
@@ -181,7 +222,7 @@ int main(int argc, char** argv) {
 		    if (fds[0].revents & POLLIN) {
 			// Read stdin
 			// Read (ASCII) input from the keyboard, echo it to stdout, and forward it to the server
-			char input[100];
+			unsigned char input[100];
 			    ssize_t rv = read(0, &input, 99);
 			    if (rv == -1) {
 				fprintf(stderr, "Error reading from file descriptor 0.\nread: %s\n", strerror(errno));
@@ -197,7 +238,11 @@ int main(int argc, char** argv) {
 					exit(1);
 				    }
 				    // Forward to server
-				    char c = '\x0A';
+				    unsigned char c = '\x0A';
+				    if (opt_compress == 1) {
+					def_and_write(sockfd, &c, 1, Z_DEFAULT_COMPRESSION);
+				    }
+				    else {
 				    temp = write(sockfd, &c, 1);
 				    if (temp < 1) {              /* # bytes written may be less than arg count */
 					fprintf(stderr, "Error writing to file descriptor %d.\nwrite: %s\n", sockfd, strerror(errno));
@@ -205,6 +250,7 @@ int main(int argc, char** argv) {
 				    }
 				    if (opt_log)
 					print_log(1, logfd, &c, 1);
+				    }
 				}
 
 				else if (input[i] == '\x04') {
@@ -233,6 +279,10 @@ int main(int argc, char** argv) {
 				    }
 				    }
 				    // Forward to server
+				    if (opt_compress == 1) {
+                                        def_and_write(sockfd, &input[i], 1, Z_DEFAULT_COMPRESSION);
+                                    }
+				    else {
 				    ssize_t temp = write(sockfd, &input[i], 1);
 				    if (temp < 1) {              /* # bytes written may be less than arg count */
 					fprintf(stderr, "Error writing to file descriptor %d.\nwrite: %s\n", sockfd, strerror(errno));
@@ -240,6 +290,7 @@ int main(int argc, char** argv) {
 				    }
 				    if (opt_log)
 					print_log(1, logfd, &input[i], 1);
+				    }
 				}
 			    }
 			}
@@ -249,7 +300,7 @@ int main(int argc, char** argv) {
 		    }
 		    if (fds[1].revents & POLLIN) {
 			// Read output from server
-			char server_out[512];
+			unsigned char server_out[512];
 			    ssize_t rv_server_out = read(sockfd, &server_out, 511);
 			    if (rv_server_out == 0) {     // EOF
 				eof_from_shell = 1;
