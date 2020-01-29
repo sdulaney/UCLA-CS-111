@@ -64,7 +64,7 @@ void reset_input_mode() {
 
 void def_and_write(int fd, unsigned char* buf, int nbytes, int level) {
     int ret;
-    int flush = Z_NO_FLUSH;
+    int flush = Z_SYNC_FLUSH;
     unsigned have;
     z_stream strm;
 //    unsigned char in[CHUNK];
