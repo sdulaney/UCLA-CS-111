@@ -94,12 +94,14 @@ void def_and_write(int fd, unsigned char* buf, int nbytes, int level) {
 	print_log(1, logfd, out, have);
     } while (strm.avail_in > 0);
     if (strm.avail_in != 0)
-	fprintf(stderr, "Error: strm.avail_out == 0.");
+	fprintf(stderr, "Error: strm.avail_in != 0.");
     if (ret != Z_STREAM_END)
 	fprintf(stderr, "Error: ret != Z_STREAM_END.");
      /* clean up */
      (void)deflateEnd(&strm);
 }
+
+
 
 int main(int argc, char** argv) {
     // Process all arguments

@@ -44,10 +44,10 @@ void print_shell_exit_info(pid_t pid) {
 
 void print_log(int sent, int fd, unsigned char* buf, int count) {
     if (sent) {
-	dprintf(fd, "SENT %d bytes: %s", count, buf);
+	dprintf(fd, "SENT %d bytes: %s\n", count, buf);
     }
     else {
-	dprintf(fd, "RECEIVED %d bytes: %s", count, buf);
+	dprintf(fd, "RECEIVED %d bytes: %s\n", count, buf);
     }
 }
 
@@ -94,7 +94,7 @@ void def_and_write(int fd, unsigned char* buf, int nbytes, int level) {
 	print_log(1, logfd, out, have);
     } while (strm.avail_in > 0);
     if (strm.avail_in != 0)
-	fprintf(stderr, "Error: strm.avail_out == 0.");
+	fprintf(stderr, "Error: strm.avail_in != 0.");
     if (ret != Z_STREAM_END)
 	fprintf(stderr, "Error: ret != Z_STREAM_END.");
      /* clean up */
