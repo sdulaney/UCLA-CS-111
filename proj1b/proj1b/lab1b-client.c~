@@ -64,7 +64,7 @@ void reset_input_mode() {
 
 void def_and_write(int fd, unsigned char* buf, int nbytes, int level) {
     int ret;
-    int flush = Z_NO_FLUSH;
+    int flush = Z_FINISH;
     unsigned have;
     z_stream strm;
 //    unsigned char in[CHUNK];
@@ -86,17 +86,17 @@ void def_and_write(int fd, unsigned char* buf, int nbytes, int level) {
 	if (ret == Z_STREAM_ERROR)
 	    fprintf(stderr, "Error: deflate returned Z_STREAM_ERROR.");
         have = CHUNK - strm.avail_out;
-	if (write(fd, out, have) < 0) {
+	if (write(fd, out, have) < have) {
 	    fprintf(stderr, "Error: error writing deflated output to file descriptor.");
 	    (void)deflateEnd(&strm);
 	    exit(1);
 	}
-    } while (strm.avail_out == 0);
+	print_log(1, logfd, out, have);
+    } while (strm.avail_in > 0);
     if (strm.avail_in != 0)
 	fprintf(stderr, "Error: strm.avail_out == 0.");
     if (ret != Z_STREAM_END)
 	fprintf(stderr, "Error: ret != Z_STREAM_END.");
-    // TODO: Add logging
      /* clean up */
      (void)deflateEnd(&strm);
 }
