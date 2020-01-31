@@ -38,7 +38,8 @@
 
 #include "zlib.h"
 
-#define CHUNK 16384
+#
+define CHUNK 16384
 
 struct termios termios_curr;
 int pipe_to_shell[2];
@@ -105,8 +106,8 @@ void def_and_write(int fd, unsigned char * buf, int nbytes, int level, int opt_l
             (void) deflateEnd( & strm);
             exit(1);
         }
-	if (opt_log)
-	    print_log(1, logfd, out, have);
+        if (opt_log)
+            print_log(1, logfd, out, have);
     } while (strm.avail_in > 0);
     if (strm.avail_in != 0)
         fprintf(stderr, "Error: strm.avail_in != 0.");
@@ -152,23 +153,23 @@ void inf_and_write(unsigned char * buf, int nbytes) {
         }
         have = CHUNK - strm.avail_out;
         for (unsigned int i = 0; i < have; i++) {
-	                if (out[i] == '\x0A') {
-                            char * output = "\x0D\x0A";
-                            ssize_t temp = write(1, output, 2);
-                            if (temp < 2) {
-                                /* # bytes written may be less than arg count */
-                                fprintf(stderr, "Error writing to file descriptor 1.\nwrite: %s\n", strerror(errno));
-                                exit(1);
-                            }
-                        } else {
-                            ssize_t temp = write(1, &out[i], 1);
-                            if (temp < 1) {
-                                /* # bytes written may be less than arg count */
-                                fprintf(stderr, "Error writing to file descriptor 1.\nwrite: %s\n", strerror(errno));
-                                exit(1);
-                            }
-                        }
-	}
+            if (out[i] == '\x0A') {
+                char * output = "\x0D\x0A";
+                ssize_t temp = write(1, output, 2);
+                if (temp < 2) {
+                    /* # bytes written may be less than arg count */
+                    fprintf(stderr, "Error writing to file descriptor 1.\nwrite: %s\n", strerror(errno));
+                    exit(1);
+                }
+            } else {
+                ssize_t temp = write(1, & out[i], 1);
+                if (temp < 1) {
+                    /* # bytes written may be less than arg count */
+                    fprintf(stderr, "Error writing to file descriptor 1.\nwrite: %s\n", strerror(errno));
+                    exit(1);
+                }
+            }
+        }
     } while (strm.avail_in > 0);
     if (strm.avail_in != 0)
         fprintf(stderr, "Error: strm.avail_in != 0.");
@@ -289,7 +290,7 @@ int main(int argc, char ** argv) {
         }
         bzero((char * ) & serv_addr, sizeof(serv_addr));
         serv_addr.sin_family = AF_INET;
-        bcopy((char * ) server->h_addr, (char * ) & serv_addr.sin_addr.s_addr, server->h_length);
+        bcopy((char * ) server - > h_addr, (char * ) & serv_addr.sin_addr.s_addr, server - > h_length);
         serv_addr.sin_port = htons(portno);
         if (connect(sockfd, (struct sockaddr * ) & serv_addr, sizeof(serv_addr)) < 0) {
             fprintf(stderr, "Error connecting.\n");
@@ -404,31 +405,30 @@ int main(int argc, char ** argv) {
                     fprintf(stderr, "Error reading from file descriptor %d.\nread: %s\n", sockfd, strerror(errno));
                     exit(1);
                 } else {
-		    if (opt_log)
+                    if (opt_log)
                         print_log(0, logfd, & server_out[0], rv_server_out);
-		    if (opt_compress == 1) {
-			inf_and_write(server_out, rv_server_out);
-		    }
-		    else {
-                    for (int i = 0; i < rv_server_out; i++) {
-                        if (server_out[i] == '\x0A') {
-                            char * output = "\x0D\x0A";
-                            ssize_t temp = write(1, output, 2);
-                            if (temp < 2) {
-                                /* # bytes written may be less than arg count */
-                                fprintf(stderr, "Error writing to file descriptor 1.\nwrite: %s\n", strerror(errno));
-                                exit(1);
-                            }
-                        } else {
-                            ssize_t temp = write(1, & server_out[i], 1);
-                            if (temp < 1) {
-                                /* # bytes written may be less than arg count */
-                                fprintf(stderr, "Error writing to file descriptor 1.\nwrite: %s\n", strerror(errno));
-                                exit(1);
+                    if (opt_compress == 1) {
+                        inf_and_write(server_out, rv_server_out);
+                    } else {
+                        for (int i = 0; i < rv_server_out; i++) {
+                            if (server_out[i] == '\x0A') {
+                                char * output = "\x0D\x0A";
+                                ssize_t temp = write(1, output, 2);
+                                if (temp < 2) {
+                                    /* # bytes written may be less than arg count */
+                                    fprintf(stderr, "Error writing to file descriptor 1.\nwrite: %s\n", strerror(errno));
+                                    exit(1);
+                                }
+                            } else {
+                                ssize_t temp = write(1, & server_out[i], 1);
+                                if (temp < 1) {
+                                    /* # bytes written may be less than arg count */
+                                    fprintf(stderr, "Error writing to file descriptor 1.\nwrite: %s\n", strerror(errno));
+                                    exit(1);
+                                }
                             }
                         }
                     }
-		    }
                 }
             }
         }
