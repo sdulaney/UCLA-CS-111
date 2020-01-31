@@ -38,8 +38,7 @@
 
 #include "zlib.h"
 
-#
-define CHUNK 16384
+#define CHUNK 16384
 
 struct termios termios_curr;
 int pipe_to_shell[2];
@@ -290,7 +289,7 @@ int main(int argc, char ** argv) {
         }
         bzero((char * ) & serv_addr, sizeof(serv_addr));
         serv_addr.sin_family = AF_INET;
-        bcopy((char * ) server - > h_addr, (char * ) & serv_addr.sin_addr.s_addr, server - > h_length);
+        bcopy((char * ) server->h_addr, (char * ) & serv_addr.sin_addr.s_addr, server->h_length);
         serv_addr.sin_port = htons(portno);
         if (connect(sockfd, (struct sockaddr * ) & serv_addr, sizeof(serv_addr)) < 0) {
             fprintf(stderr, "Error connecting.\n");

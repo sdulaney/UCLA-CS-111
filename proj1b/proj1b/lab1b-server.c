@@ -32,8 +32,7 @@
 
 #include "zlib.h"
 
-#
-define CHUNK 16384
+#define CHUNK 16384
 
 int pipe_to_shell[2];
 int closed_write_pipe_to_shell = 0;

@@ -32,7 +32,8 @@
 
 #include "zlib.h"
 
-#define CHUNK 16384
+#
+define CHUNK 16384
 
 int pipe_to_shell[2];
 int closed_write_pipe_to_shell = 0;
@@ -382,19 +383,18 @@ int main(int argc, char ** argv) {
                         fprintf(stderr, "Error reading from file descriptor %d.\nread: %s\n", pipe_to_term[0], strerror(errno));
                         exit(1);
                     }
-		    if (opt_compress == 1) {
-			def_and_write(newsockfd, &shell_out, rv_shell_out, Z_DEFAULT_COMPRESSION);
-		    }
-		    else {
-                    for (int i = 0; i < rv_shell_out; i++) {
-                        ssize_t temp = write(newsockfd, &shell_out[i], 1);
-                        if (temp < 1) {
-                            /* # bytes written may be less than arg count */
-                            fprintf(stderr, "Error writing to file descriptor %d.\nwrite: %s\n", newsockfd, strerror(errno));
-                            exit(1);
+                    if (opt_compress == 1) {
+                        def_and_write(newsockfd, & shell_out[0], rv_shell_out, Z_DEFAULT_COMPRESSION);
+                    } else {
+                        for (int i = 0; i < rv_shell_out; i++) {
+                            ssize_t temp = write(newsockfd, & shell_out[i], 1);
+                            if (temp < 1) {
+                                /* # bytes written may be less than arg count */
+                                fprintf(stderr, "Error writing to file descriptor %d.\nwrite: %s\n", newsockfd, strerror(errno));
+                                exit(1);
+                            }
                         }
                     }
-		    }
                 }
             }
         }

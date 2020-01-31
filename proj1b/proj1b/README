@@ -4,17 +4,31 @@ ID: 904-064-791
 
 Included files:
 
-lab1a.c:
-- a multi-process program that implements a telnet-like client and server
-- this is achieved by using character-at-a-time/full duplex terminal I/O, polled I/O, and passing input and output between two processes over pipes 
+lab1b-client.c:
+- a program that implements a telnet-like client
+- this is achieved by using character-at-a-time/full duplex terminal I/O, polled I/O, and communicating with the server over a socket 
 - supports the following optional command line options:
-  --shell ... pass input/output between the terminal and a shell
+  --port=port ... use the specified port to open a socket connection to the server (argument port required)
+  --log=filename ... use the specified filename to log all data written to or read from the server to that file (argument filename required)
+  --compress ... compress communication to and decompress communication from the server using zlib
+- summary of exit codes:
+  0 ... normal execution, shutdown on ^D
+  1 ... unrecognized argument or system call failure
+
+lab1b-server.c:
+- a multi-process program that implements a telnet-like server
+- this is achieved by using polled I/O, passing I/O between the client and server over a socket, and passing I/O between the server and a shell over pipes
+- supports the following optional command line options:
+  --port=port ... use the specified port to open a socket connection to the client (argument port required)
+  --compress ... compress communication to and decompress communication from the client using zlib
 - summary of exit codes:
   0 ... normal execution, shutdown on ^D
   1 ... unrecognized argument or system call failure
 
 Makefile:
 - supports the following targets:
-  build (default) ... build the lab1a executable with the -g, -Wall, and -Wextra options
+  build (default) ... build both the lab1b-client and lab1b-server executables with the -g, -Wall, -Wextra, and -lz options
+  lab1b-client ... build the lab1b-client executable with the -g, -Wall, -Wextra, and -lz options
+  lab1b-server ... build the lab1b-server executable with the -g, -Wall, -Wextra, and -lz options
   clean ...  delete all files created by the Makefile
   dist ... build the distribution tarball
