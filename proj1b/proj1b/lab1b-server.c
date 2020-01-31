@@ -20,8 +20,6 @@
 
 #include <errno.h>
 
-#include <termios.h>
-
 #include <sys/poll.h>
 
 #include <sys/wait.h>
@@ -34,10 +32,8 @@
 
 #include "zlib.h"
 
-#
-define CHUNK 16384
+#define CHUNK 16384
 
-struct termios termios_curr;
 int pipe_to_shell[2];
 int closed_write_pipe_to_shell = 0;
 int eof_from_shell = 0;
@@ -61,9 +57,42 @@ void sigpipe_handler(int signum) {
     }
 }
 
-void reset_input_mode() {
-    // Restore the terminal modes
-    tcsetattr(0, TCSANOW, & termios_curr);
+void def_and_write(int fd, unsigned char * buf, int nbytes, int level) {
+    int ret;
+    int flush = Z_FINISH;
+    unsigned have;
+    z_stream strm;
+    //    unsigned char in[CHUNK];
+    unsigned char out[CHUNK];
+
+    /* allocate deflate state */
+    strm.zalloc = Z_NULL;
+    strm.zfree = Z_NULL;
+    strm.opaque = Z_NULL;
+    ret = deflateInit( & strm, level);
+    if (ret != Z_OK)
+        fprintf(stderr, "Error: deflateInit did not return Z_OK.");
+    strm.avail_in = nbytes;
+    strm.next_in = buf;
+    do {
+        strm.avail_out = CHUNK;
+        strm.next_out = out;
+        ret = deflate( & strm, flush); /* no bad return value */
+        if (ret == Z_STREAM_ERROR)
+            fprintf(stderr, "Error: deflate returned Z_STREAM_ERROR.");
+        have = CHUNK - strm.avail_out;
+        if (write(fd, out, have) < have) {
+            fprintf(stderr, "Error: error writing deflated output to file descriptor.");
+            (void) deflateEnd( & strm);
+            exit(1);
+        }
+    } while (strm.avail_in > 0);
+    if (strm.avail_in != 0)
+        fprintf(stderr, "Error: strm.avail_in != 0.");
+    if (ret != Z_STREAM_END)
+        fprintf(stderr, "Error: ret != Z_STREAM_END.");
+    /* clean up */
+    (void) deflateEnd( & strm);
 }
 
 void inf_and_write(unsigned char * buf, int nbytes) {
@@ -195,18 +224,6 @@ int main(int argc, char ** argv) {
             printf("?? getopt returned character code 0%o ??\n", c);
         }
     }
-
-    // Get and save the current terminal modes
-    tcgetattr(0, & termios_curr);
-
-    // Put the keyboard into character-at-a-time, no-echo mode
-    struct termios termios_new = termios_curr;
-    termios_new.c_iflag = ISTRIP; /* only lower 7 bits	*/
-    termios_new.c_oflag = 0; /* no processing	*/
-    termios_new.c_lflag = 0; /* no processing	*/
-    tcsetattr(0, TCSANOW, & termios_new);
-
-    atexit(reset_input_mode);
 
     if (opt_port == 1) {
         // Socket set up
@@ -353,7 +370,7 @@ int main(int argc, char ** argv) {
                 }
                 if (fds[1].revents & POLLIN) {
                     // Read output from shell
-                    char shell_out[512];
+                    unsigned char shell_out[512];
                     ssize_t rv_shell_out = read(pipe_to_term[0], & shell_out, 511);
                     if (rv_shell_out == 0) { // EOF
                         eof_from_shell = 1;
@@ -365,14 +382,19 @@ int main(int argc, char ** argv) {
                         fprintf(stderr, "Error reading from file descriptor %d.\nread: %s\n", pipe_to_term[0], strerror(errno));
                         exit(1);
                     }
+		    if (opt_compress == 1) {
+			def_and_write(newsockfd, &shell_out[0], rv_shell_out, Z_DEFAULT_COMPRESSION);
+		    }
+		    else {
                     for (int i = 0; i < rv_shell_out; i++) {
-                        ssize_t temp = write(newsockfd, & shell_out[i], 1);
+                        ssize_t temp = write(newsockfd, &shell_out[i], 1);
                         if (temp < 1) {
                             /* # bytes written may be less than arg count */
                             fprintf(stderr, "Error writing to file descriptor %d.\nwrite: %s\n", newsockfd, strerror(errno));
                             exit(1);
                         }
                     }
+		    }
                 }
             }
         }

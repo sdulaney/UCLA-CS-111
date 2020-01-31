@@ -38,8 +38,7 @@
 
 #include "zlib.h"
 
-#
-define CHUNK 16384
+#define CHUNK 16384
 
 struct termios termios_curr;
 int pipe_to_shell[2];
@@ -77,7 +76,7 @@ void reset_input_mode() {
     tcsetattr(0, TCSANOW, & termios_curr);
 }
 
-void def_and_write(int fd, unsigned char * buf, int nbytes, int level) {
+void def_and_write(int fd, unsigned char * buf, int nbytes, int level, int opt_log) {
     int ret;
     int flush = Z_FINISH;
     unsigned have;
@@ -106,12 +105,75 @@ void def_and_write(int fd, unsigned char * buf, int nbytes, int level) {
             (void) deflateEnd( & strm);
             exit(1);
         }
-        print_log(1, logfd, out, have);
+	if (opt_log)
+	    print_log(1, logfd, out, have);
     } while (strm.avail_in > 0);
     if (strm.avail_in != 0)
         fprintf(stderr, "Error: strm.avail_in != 0.");
     if (ret != Z_STREAM_END)
         fprintf(stderr, "Error: ret != Z_STREAM_END.");
+    /* clean up */
+    (void) deflateEnd( & strm);
+}
+
+void inf_and_write(unsigned char * buf, int nbytes) {
+    int ret;
+    unsigned have;
+    z_stream strm;
+    //    unsigned char in[CHUNK];
+    unsigned char out[CHUNK];
+
+    /* allocate inflate state */
+    strm.zalloc = Z_NULL;
+    strm.zfree = Z_NULL;
+    strm.opaque = Z_NULL;
+    strm.avail_in = nbytes;
+    strm.next_in = buf;
+    ret = inflateInit( & strm);
+    if (ret != Z_OK)
+        fprintf(stderr, "Error: inflateInit did not return Z_OK.");
+
+    do {
+        strm.avail_out = CHUNK;
+        strm.next_out = out;
+        ret = inflate( & strm, Z_FINISH); /* no bad return value */
+        if (ret == Z_STREAM_ERROR)
+            fprintf(stderr, "Error: inflate returned Z_STREAM_ERROR.");
+        switch (ret) {
+        case Z_NEED_DICT:
+            ret = Z_DATA_ERROR;
+            (void) inflateEnd( & strm);
+            fprintf(stderr, "Error: inflate returned error code %d.", ret);
+            break;
+        case Z_DATA_ERROR:
+        case Z_MEM_ERROR:
+            (void) inflateEnd( & strm);
+            fprintf(stderr, "Error: inflate returned error code %d.", ret);
+        }
+        have = CHUNK - strm.avail_out;
+        for (unsigned int i = 0; i < have; i++) {
+	                if (out[i] == '\x0A') {
+                            char * output = "\x0D\x0A";
+                            ssize_t temp = write(1, output, 2);
+                            if (temp < 2) {
+                                /* # bytes written may be less than arg count */
+                                fprintf(stderr, "Error writing to file descriptor 1.\nwrite: %s\n", strerror(errno));
+                                exit(1);
+                            }
+                        } else {
+                            ssize_t temp = write(1, &out[i], 1);
+                            if (temp < 1) {
+                                /* # bytes written may be less than arg count */
+                                fprintf(stderr, "Error writing to file descriptor 1.\nwrite: %s\n", strerror(errno));
+                                exit(1);
+                            }
+                        }
+	}
+    } while (strm.avail_in > 0);
+    if (strm.avail_in != 0)
+        fprintf(stderr, "Error: strm.avail_in != 0.");
+    //if (ret != Z_STREAM_END)
+    //    fprintf(stderr, "Error: ret != Z_STREAM_END.");
     /* clean up */
     (void) deflateEnd( & strm);
 }
@@ -227,7 +289,7 @@ int main(int argc, char ** argv) {
         }
         bzero((char * ) & serv_addr, sizeof(serv_addr));
         serv_addr.sin_family = AF_INET;
-        bcopy((char * ) server - > h_addr, (char * ) & serv_addr.sin_addr.s_addr, server - > h_length);
+        bcopy((char * ) server->h_addr, (char * ) & serv_addr.sin_addr.s_addr, server->h_length);
         serv_addr.sin_port = htons(portno);
         if (connect(sockfd, (struct sockaddr * ) & serv_addr, sizeof(serv_addr)) < 0) {
             fprintf(stderr, "Error connecting.\n");
@@ -276,7 +338,7 @@ int main(int argc, char ** argv) {
                             // Forward to server
                             unsigned char c = '\x0A';
                             if (opt_compress == 1) {
-                                def_and_write(sockfd, & c, 1, Z_DEFAULT_COMPRESSION);
+                                def_and_write(sockfd, & c, 1, Z_DEFAULT_COMPRESSION, opt_log);
                             } else {
                                 temp = write(sockfd, & c, 1);
                                 if (temp < 1) {
@@ -313,7 +375,7 @@ int main(int argc, char ** argv) {
                             }
                             // Forward to server
                             if (opt_compress == 1) {
-                                def_and_write(sockfd, & input[i], 1, Z_DEFAULT_COMPRESSION);
+                                def_and_write(sockfd, & input[i], 1, Z_DEFAULT_COMPRESSION, opt_log);
                             } else {
                                 ssize_t temp = write(sockfd, & input[i], 1);
                                 if (temp < 1) {
@@ -342,8 +404,12 @@ int main(int argc, char ** argv) {
                     fprintf(stderr, "Error reading from file descriptor %d.\nread: %s\n", sockfd, strerror(errno));
                     exit(1);
                 } else {
-                    if (opt_log)
+		    if (opt_log)
                         print_log(0, logfd, & server_out[0], rv_server_out);
+		    if (opt_compress == 1) {
+			inf_and_write(server_out, rv_server_out);
+		    }
+		    else {
                     for (int i = 0; i < rv_server_out; i++) {
                         if (server_out[i] == '\x0A') {
                             char * output = "\x0D\x0A";
@@ -362,6 +428,7 @@ int main(int argc, char ** argv) {
                             }
                         }
                     }
+		    }
                 }
             }
         }
