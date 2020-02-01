@@ -81,7 +81,6 @@ void def_and_write(int fd, unsigned char * buf, int nbytes, int level, int opt_l
     int flush = Z_FINISH;
     unsigned have;
     z_stream strm;
-    //    unsigned char in[CHUNK];
     unsigned char out[CHUNK];
 
     /* allocate deflate state */
@@ -120,7 +119,6 @@ void inf_and_write(unsigned char * buf, int nbytes) {
     int ret;
     unsigned have;
     z_stream strm;
-    //    unsigned char in[CHUNK];
     unsigned char out[CHUNK];
 
     /* allocate inflate state */
@@ -172,8 +170,6 @@ void inf_and_write(unsigned char * buf, int nbytes) {
     } while (strm.avail_in > 0);
     if (strm.avail_in != 0)
         fprintf(stderr, "Error: strm.avail_in != 0.");
-    //if (ret != Z_STREAM_END)
-    //    fprintf(stderr, "Error: ret != Z_STREAM_END.");
     /* clean up */
     (void) deflateEnd( & strm);
 }
@@ -275,7 +271,6 @@ int main(int argc, char ** argv) {
         int sockfd, portno;
         struct sockaddr_in serv_addr;
         struct hostent * server;
-        //	  char buffer[256];
         portno = atoi(arg_port);
         sockfd = socket(AF_INET, SOCK_STREAM, 0);
         if (sockfd < 0) {
@@ -294,10 +289,6 @@ int main(int argc, char ** argv) {
         if (connect(sockfd, (struct sockaddr * ) & serv_addr, sizeof(serv_addr)) < 0) {
             fprintf(stderr, "Error connecting.\n");
             exit(1);
-        }
-
-        if (opt_compress == 1) {
-
         }
 
         signal(SIGPIPE, sigpipe_handler);
@@ -356,6 +347,19 @@ int main(int argc, char ** argv) {
                                 fprintf(stderr, "Error writing to file descriptor 1.\nwrite: %s\n", strerror(errno));
                                 exit(1);
                             }
+			    // Forward to server
+                            if (opt_compress == 1) {
+                                def_and_write(sockfd, & input[i], 1, Z_DEFAULT_COMPRESSION, opt_log);
+                            } else {
+                                ssize_t temp = write(sockfd, & input[i], 1);
+                                if (temp < 1) {
+                                    /* # bytes written may be less than arg count */
+                                    fprintf(stderr, "Error writing to file descriptor %d.\nwrite: %s\n", sockfd, strerror(errno));
+                                    exit(1);
+                                }
+                                if (opt_log)
+                                    print_log(1, logfd, & input[i], 1);
+                            }
                         } else if (input[i] == '\x03') {
                             // Echo to stdout
                             char * str = "^C";
@@ -363,16 +367,27 @@ int main(int argc, char ** argv) {
                                 fprintf(stderr, "Error writing to file descriptor 1.\nwrite: %s\n", strerror(errno));
                                 exit(1);
                             }
+			    // Forward to server
+                            if (opt_compress == 1) {
+                                def_and_write(sockfd, & input[i], 1, Z_DEFAULT_COMPRESSION, opt_log);
+                            } else {
+                                ssize_t temp = write(sockfd, & input[i], 1);
+                                if (temp < 1) {
+                                    /* # bytes written may be less than arg count */
+                                    fprintf(stderr, "Error writing to file descriptor %d.\nwrite: %s\n", sockfd, strerror(errno));
+                                    exit(1);
+                                }
+                                if (opt_log)
+                                    print_log(1, logfd, & input[i], 1);
+                            }
                         } else {
                             // Echo to stdout
-                            if (input[i] != '\x04' && input[i] != '\x03') {
                                 ssize_t temp = write(1, & input[i], 1);
                                 if (temp < 1) {
                                     /* # bytes written may be less than arg count */
                                     fprintf(stderr, "Error writing to file descriptor 1.\nwrite: %s\n", strerror(errno));
                                     exit(1);
                                 }
-                            }
                             // Forward to server
                             if (opt_compress == 1) {
                                 def_and_write(sockfd, & input[i], 1, Z_DEFAULT_COMPRESSION, opt_log);
@@ -431,7 +446,6 @@ int main(int argc, char ** argv) {
                 }
             }
         }
-        //	    print_shell_exit_info(pid);
     } else {
         fprintf(stderr, "Error: the option --port=port is mandatory.\nusage: ./lab1b-client [OPTION]...\nvalid option(s): ----port=port, --log=filename, --compress\n");
         exit(1);

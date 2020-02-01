@@ -62,7 +62,6 @@ void def_and_write(int fd, unsigned char * buf, int nbytes, int level) {
     int flush = Z_FINISH;
     unsigned have;
     z_stream strm;
-    //    unsigned char in[CHUNK];
     unsigned char out[CHUNK];
 
     /* allocate deflate state */
@@ -99,7 +98,6 @@ void inf_and_write(unsigned char * buf, int nbytes) {
     int ret;
     unsigned have;
     z_stream strm;
-    //    unsigned char in[CHUNK];
     unsigned char out[CHUNK];
 
     /* allocate inflate state */
@@ -156,8 +154,6 @@ void inf_and_write(unsigned char * buf, int nbytes) {
     } while (strm.avail_in > 0);
     if (strm.avail_in != 0)
         fprintf(stderr, "Error: strm.avail_in != 0.");
-    //if (ret != Z_STREAM_END)
-    //    fprintf(stderr, "Error: ret != Z_STREAM_END.");
     /* clean up */
     (void) deflateEnd( & strm);
 }
@@ -229,7 +225,6 @@ int main(int argc, char ** argv) {
         // Socket set up
         int sockfd, portno;
         socklen_t clilen;
-        //	char buffer[256];
         struct sockaddr_in serv_addr, cli_addr;
         sockfd = socket(AF_INET, SOCK_STREAM, 0);
         if (sockfd < 0) {
@@ -397,6 +392,9 @@ int main(int argc, char ** argv) {
                 }
             }
         }
+	close(pipe_to_term[0]);
+	close(sockfd);
+	close(newsockfd);
         print_shell_exit_info(pid);
     } else {
         fprintf(stderr, "Error: the option --port=port is mandatory.\nusage: ./lab1b-server [OPTION]...\nvalid option(s): ----port=port, --compress\n");

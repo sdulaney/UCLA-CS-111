@@ -32,8 +32,7 @@
 
 #include "zlib.h"
 
-#
-define CHUNK 16384
+#define CHUNK 16384
 
 int pipe_to_shell[2];
 int closed_write_pipe_to_shell = 0;
@@ -63,7 +62,6 @@ void def_and_write(int fd, unsigned char * buf, int nbytes, int level) {
     int flush = Z_FINISH;
     unsigned have;
     z_stream strm;
-    //    unsigned char in[CHUNK];
     unsigned char out[CHUNK];
 
     /* allocate deflate state */
@@ -100,7 +98,6 @@ void inf_and_write(unsigned char * buf, int nbytes) {
     int ret;
     unsigned have;
     z_stream strm;
-    //    unsigned char in[CHUNK];
     unsigned char out[CHUNK];
 
     /* allocate inflate state */
@@ -157,8 +154,6 @@ void inf_and_write(unsigned char * buf, int nbytes) {
     } while (strm.avail_in > 0);
     if (strm.avail_in != 0)
         fprintf(stderr, "Error: strm.avail_in != 0.");
-    //if (ret != Z_STREAM_END)
-    //    fprintf(stderr, "Error: ret != Z_STREAM_END.");
     /* clean up */
     (void) deflateEnd( & strm);
 }
@@ -230,7 +225,6 @@ int main(int argc, char ** argv) {
         // Socket set up
         int sockfd, portno;
         socklen_t clilen;
-        //	char buffer[256];
         struct sockaddr_in serv_addr, cli_addr;
         sockfd = socket(AF_INET, SOCK_STREAM, 0);
         if (sockfd < 0) {
