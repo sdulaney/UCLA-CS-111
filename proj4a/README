@@ -1,0 +1,29 @@
+NAME: Stewart Dulaney
+EMAIL: sdulaney@ucla.edu
+ID: 904-064-791
+
+Serial Number of Beaglebone: BBGW18040540
+
+WiFi MAC address: 2CF7F106911B
+
+Included files:
+
+my_beaglebone.jpg:
+- a selfie of me holding my assembled Beaglebone (showing the front of the board)
+
+connected.png:
+- a screen shot from a USB terminal command session connected to the system, showing that I gave it a name and configured network access
+
+copy.png:
+- a screen shot from a local session in which I copied a hello world program from my laptop to my Beaglebone
+
+build_run.png:
+- a screen shot from a WIFI SSH session in which I built and ran a trivial (hello world) program
+
+git.png:
+- a screen shot from a WIFI SSH session in which I installed git and cloned a repository
+
+Makefile:
+- supports the following targets:
+  clean ...  delete all files created by the Makefile
+  dist ... build the distribution tarball
