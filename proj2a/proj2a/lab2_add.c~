@@ -67,5 +67,19 @@ int main(int argc, char** argv) {
         }
     }
 
+    // Set default values for --threads, --iterations if those options aren't given on command line
+    if (opt_threads == 0)
+	arg_threads = &default;
+    if (opt_iterations == 0)
+        arg_iterations = &default;
+
+    long long counter = 0;
+    struct timespec start, stop;
+    double accum;
+    if (clock_gettime(CLOCK_REALTIME, &start) == -1) {
+	fprintf(stderr, "Error retrieving time.\nclock_gettime: %s\n", strerror(errno));
+        exit(1);
+    }
+
     exit(0);
 }

@@ -81,5 +81,16 @@ int main(int argc, char** argv) {
         exit(1);
     }
 
+
+
+
+
+
+    if (clock_gettime(CLOCK_REALTIME, &stop) == -1) {
+        fprintf(stderr, "Error retrieving time.\nclock_gettime: %s\n", strerror(errno));
+        exit(1);
+    }
+
+    
     exit(0);
 }
