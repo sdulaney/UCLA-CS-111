@@ -28,9 +28,7 @@ void* incr_and_decr(void* threadarg) {
     int n = my_data->num_iterations;
     for (int i = 0; i < n; i++) {
 	add(pointer, 1);
-    }
-    for (int i = 0; i < n; i++) {
-        add(pointer, -1);
+	add(pointer, -1);
     }
     return NULL;
 }
