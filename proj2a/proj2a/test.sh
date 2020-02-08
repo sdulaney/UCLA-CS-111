@@ -24,3 +24,35 @@
 ./lab2_add --iterations=1000 --threads=10
 ./lab2_add --iterations=10000 --threads=10
 ./lab2_add --iterations=100000 --threads=10
+./lab2_add --iterations=10 --threads=2 --yield
+./lab2_add --iterations=20 --threads=2 --yield
+./lab2_add --iterations=40 --threads=2 --yield
+./lab2_add --iterations=80 --threads=2 --yield
+./lab2_add --iterations=100 --threads=2 --yield
+./lab2_add --iterations=1000 --threads=2 --yield
+./lab2_add --iterations=10000 --threads=2 --yield
+./lab2_add --iterations=100000 --threads=2 --yield
+./lab2_add --iterations=10 --threads=4 --yield
+./lab2_add --iterations=20 --threads=4 --yield
+./lab2_add --iterations=40 --threads=4 --yield
+./lab2_add --iterations=80 --threads=4 --yield
+./lab2_add --iterations=100 --threads=4 --yield
+./lab2_add --iterations=1000 --threads=4 --yield
+./lab2_add --iterations=10000 --threads=4 --yield
+./lab2_add --iterations=100000 --threads=4 --yield
+./lab2_add --iterations=10 --threads=8 --yield
+./lab2_add --iterations=20 --threads=8 --yield
+./lab2_add --iterations=40 --threads=8 --yield
+./lab2_add --iterations=80 --threads=8 --yield
+./lab2_add --iterations=100 --threads=8 --yield
+./lab2_add --iterations=1000 --threads=8 --yield
+./lab2_add --iterations=10000 --threads=8 --yield
+./lab2_add --iterations=100000 --threads=8 --yield
+./lab2_add --iterations=10 --threads=12 --yield
+./lab2_add --iterations=20 --threads=12 --yield
+./lab2_add --iterations=40 --threads=12 --yield
+./lab2_add --iterations=80 --threads=12 --yield
+./lab2_add --iterations=100 --threads=12 --yield
+./lab2_add --iterations=1000 --threads=12 --yield
+./lab2_add --iterations=10000 --threads=12 --yield
+./lab2_add --iterations=100000 --threads=12 --yield

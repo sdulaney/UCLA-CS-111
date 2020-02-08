@@ -9,3 +9,8 @@ QUESTION 2.1.1 - causing conflicts:
 - Why does a significantly smaller number of iterations so seldom fail?
 The answer to both questions is the same: for a small enough number of iterations a thread is likely to finish its' processing of the shared data before the next thread is created and the thread scheduler has a chance to preempt the first thread and context switch to the next thread (i.e., before the end of the time slice). As a result, the likelihood of a race condition is lower and the likelihood of all iterations for a single thread being an atomic operation is higher.
 
+QUESTION 2.1.2 - cost of yielding:
+- Why are the --yield runs so much slower?
+- Where is the additional time going?
+- Is it possible to get valid per-operation timings if we are using the --yield option?
+- If so, explain how. If not, explain why not.
