@@ -87,7 +87,7 @@ int main(int argc, char** argv) {
         }
     }
 
-    // Set default values for --threads, --iterations if those options aren't given on command line
+    // Set default value of 1 for --threads, --iterations if those options aren't given on command line
     if (opt_threads == 0)
 	arg_threads = &default_val;
     if (opt_iterations == 0)
@@ -129,8 +129,7 @@ int main(int argc, char** argv) {
     long total_run_time = (stop.tv_sec - start.tv_sec) * 1000000000L + (stop.tv_nsec - start.tv_nsec);
     long total_ops = num_threads * num_iterations * 2;
     long avg_time_per_op = total_run_time / total_ops;
-    fprintf(stdout, "add-none,%d,%d,%ld,%ld,%ld,%lld", num_threads, num_iterations, total_ops, total_run_time, avg_time_per_op, counter);
+    fprintf(stdout, "add-none,%d,%d,%ld,%ld,%ld,%lld\n", num_threads, num_iterations, total_ops, total_run_time, avg_time_per_op, counter);
 
-    
     exit(0);
 }
