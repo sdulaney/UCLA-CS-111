@@ -5,7 +5,7 @@
 build: lab2_add
 
 lab2_add:
-	gcc lab2_add.c -o lab2_add -g -Wall -Wextra -lpthread
+	gcc lab2_add.c -o lab2_add -g -Wall -Wextra
 
 clean:
 	-rm lab2_add

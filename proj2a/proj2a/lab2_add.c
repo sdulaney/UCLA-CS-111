@@ -9,6 +9,7 @@
 #include <getopt.h>
 #include <string.h>
 #include <errno.h>
+#include <pthread.h>
 
 void add(long long *pointer, long long value) {
     long long sum = *pointer + value;
@@ -42,7 +43,7 @@ int main(int argc, char** argv) {
     int opt_iterations = 0;
     char* arg_threads;
     char* arg_iterations;
-    char default = '1';
+    char default_val = '1';
     
     while (1) {
         int option_index = 0;
@@ -65,14 +66,14 @@ int main(int argc, char** argv) {
                     if (optarg)
 			arg_threads = optarg;
 		    else
-			arg_threads = &default;
+			arg_threads = &default_val;
 		}
 		else if (strcmp(name, "iterations") == 0) {
 		    opt_iterations = 1;
                     if (optarg)
 			arg_iterations = optarg;
 		    else
-			arg_iterations = &default;
+			arg_iterations = &default_val;
 		}
 		break;
 	    
@@ -88,15 +89,14 @@ int main(int argc, char** argv) {
 
     // Set default values for --threads, --iterations if those options aren't given on command line
     if (opt_threads == 0)
-	arg_threads = &default;
+	arg_threads = &default_val;
     if (opt_iterations == 0)
-        arg_iterations = &default;
+        arg_iterations = &default_val;
     int num_threads = atoi(arg_threads);
     int num_iterations = atoi(arg_iterations);
 
     long long counter = 0;
     struct timespec start, stop;
-    double accum;
     
     // Note start time
     if (clock_gettime(CLOCK_REALTIME, &start) == -1) {
@@ -109,14 +109,15 @@ int main(int argc, char** argv) {
     threadarg.pointer = &counter;
     threadarg.num_iterations = num_iterations;
     for (int i = 0; i < num_threads; i++) {
-	if (pthread_create(&thread_ids[i], NULL, incr_and_decr, (void *) &threadarg) != 0) {
+	int error = pthread_create(&thread_ids[i], NULL, incr_and_decr, (void *) &threadarg);
+	if (error != 0) {
 	    fprintf(stderr, "Error creating thread.\npthread_create: %s\n", strerror(error));
 	    // pthread_create isn't a syscall
 	    exit(2);
 	}
     }
     for (int i = 0; i < num_threads; i++) {
-        pthread_join(&thread_ids[i], NULL);
+        pthread_join(thread_ids[i], NULL);
     }
 
     // Note stop time
@@ -125,11 +126,10 @@ int main(int argc, char** argv) {
         exit(1);
     }
 
-    // Calculate run time in ns
-    
-
-    // TODO: add last 3 values
-    fprintf(stdout, "add-none,%d,%d,%d", num_threads, num_iterations, num_threads * num_iterations * 2);
+    long total_run_time = (stop.tv_sec - start.tv_sec) * 1000000000L + (stop.tv_nsec - start.tv_nsec);
+    long total_ops = num_threads * num_iterations * 2;
+    long avg_time_per_op = total_run_time / total_ops;
+    fprintf(stdout, "add-none,%d,%d,%ld,%ld,%ld,%lld", num_threads, num_iterations, total_ops, total_run_time, avg_time_per_op, counter);
 
     
     exit(0);
