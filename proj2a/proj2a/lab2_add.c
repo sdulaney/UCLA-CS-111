@@ -15,6 +15,17 @@ void add(long long *pointer, long long value) {
     *pointer = sum;
 }
 
+// TODO: Create struct to pass multiple args to thread start routine?
+void* incr_and_decr(void* pointer, int n) {
+    for (int i = 0; i < n; i++) {
+	add(pointer, 1);
+    }
+    for (int i = 0; i < n; i++) {
+        add(pointer, -1);
+    }
+    return NULL;
+}
+
 int main(int argc, char** argv) {
 
     // Process all arguments
@@ -72,24 +83,38 @@ int main(int argc, char** argv) {
 	arg_threads = &default;
     if (opt_iterations == 0)
         arg_iterations = &default;
+    int num_threads = atoi(arg_threads);
+    int num_iterations = atoi(arg_iterations);
 
     long long counter = 0;
     struct timespec start, stop;
     double accum;
+    
+    // Note start time
     if (clock_gettime(CLOCK_REALTIME, &start) == -1) {
 	fprintf(stderr, "Error retrieving time.\nclock_gettime: %s\n", strerror(errno));
         exit(1);
     }
 
+    pthread_t thread_ids[num_threads];
+    for (int i = 0; i < num_threads; i++) {
+	pthread_create(&thread_ids[i], NULL, incr_and_decr, NULL);
+    }
+    for (int i = 0; i < num_threads; i++) {
+        pthread_join(&thread_ids[i], NULL);
+    }
 
-
-
-
-
+    // Note stop time
     if (clock_gettime(CLOCK_REALTIME, &stop) == -1) {
         fprintf(stderr, "Error retrieving time.\nclock_gettime: %s\n", strerror(errno));
         exit(1);
     }
+
+    // Calculate run time in ns
+    
+
+    // TODO: add last 3 values
+    fprintf(stdout, "add-none,%d,%d,%d", num_threads, num_iterations, num_threads * num_iterations * 2);
 
     
     exit(0);
