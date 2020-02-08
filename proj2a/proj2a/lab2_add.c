@@ -15,8 +15,16 @@ void add(long long *pointer, long long value) {
     *pointer = sum;
 }
 
-// TODO: Create struct to pass multiple args to thread start routine?
-void* incr_and_decr(void* pointer, int n) {
+struct thread_data {
+    long long *pointer;
+    int num_iterations;
+};
+
+void* incr_and_decr(void* threadarg) {
+    struct thread_data *my_data;
+    my_data = (struct thread_data *) threadarg;
+    long long *pointer = my_data->pointer;
+    int n = my_data->num_iterations;
     for (int i = 0; i < n; i++) {
 	add(pointer, 1);
     }
@@ -97,8 +105,15 @@ int main(int argc, char** argv) {
     }
 
     pthread_t thread_ids[num_threads];
+    struct thread_data threadarg;
+    threadarg.pointer = &counter;
+    threadarg.num_iterations = num_iterations;
     for (int i = 0; i < num_threads; i++) {
-	pthread_create(&thread_ids[i], NULL, incr_and_decr, NULL);
+	if (pthread_create(&thread_ids[i], NULL, incr_and_decr, (void *) &threadarg) != 0) {
+	    fprintf(stderr, "Error creating thread.\npthread_create: %s\n", strerror(error));
+	    // pthread_create isn't a syscall
+	    exit(2);
+	}
     }
     for (int i = 0; i < num_threads; i++) {
         pthread_join(&thread_ids[i], NULL);
