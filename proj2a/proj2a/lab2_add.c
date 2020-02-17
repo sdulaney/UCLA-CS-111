@@ -215,11 +215,6 @@ int main(int argc, char** argv) {
     for (int i = 0; i < num_threads; i++) {
         pthread_join(thread_ids[i], NULL);
     }
-    if (pthread_mutex_destroy(&lock) != 0) {
-        fprintf(stderr, "Error destroying mutex.\n");
-        // pthread_mutex_destroy isn't a syscall
-        exit(2);
-    }
 
     // Note stop time
     if (clock_gettime(CLOCK_MONOTONIC, &stop) == -1) {
@@ -263,5 +258,11 @@ int main(int argc, char** argv) {
 	}
     }    
 
+    if (pthread_mutex_destroy(&lock) != 0) {
+        fprintf(stderr, "Error destroying mutex.\n");
+        // pthread_mutex_destroy isn't a syscall
+        exit(2);
+    }
+    
     exit(0);
 }

@@ -12,92 +12,61 @@
 #include <pthread.h>
 #include "SortedList.h"
 
+int num_threads = 0;
+int num_iterations = 0;
 pthread_mutex_t lock;
 int spin_lock = 0;
 int opt_yield = 0;
+char* arg_sync = NULL;
 SortedListElement_t* element_arr = NULL;
 char** key_arr = NULL;
+SortedList_t head;
 
-void add(long long *pointer, long long value) {
-    long long sum = *pointer + value;
-    if (opt_yield)
-	sched_yield();
-    *pointer = sum;
-}
-
-struct thread_data {
-    long long *pointer;
-    int num_iterations;
-};
-
-void* incr_and_decr(void* threadarg) {
-    struct thread_data *my_data;
-    my_data = (struct thread_data *) threadarg;
-    long long *pointer = my_data->pointer;
-    int n = my_data->num_iterations;
-    for (int i = 0; i < n; i++) {
-	add(pointer, 1);
-	add(pointer, -1);
+void* thread_start_routine(void* elem_arr) {
+    SortedListElement_t* arr = elem_arr;
+    if (*arg_sync == 'm') {
+	if (pthread_mutex_lock(&lock) != 0) {
+	    fprintf(stderr, "Error locking mutex.\n");
+	    // pthread_mutex_lock isn't a syscall
+	    exit(2);
+	}
     }
-    return NULL;
-}
-
-void* incr_and_decr_sync_m(void* threadarg) {
-    if (pthread_mutex_lock(&lock) != 0) {
-        fprintf(stderr, "Error locking mutex.\n");
-        // pthread_mutex_lock isn't a syscall
-        exit(2);
+    else if (*arg_sync == 's') {
+	while (__sync_lock_test_and_set(&spin_lock, 1)) {
+	    continue;
+	}
     }
-    struct thread_data *my_data;
-    my_data = (struct thread_data *) threadarg;
-    long long *pointer = my_data->pointer;
-    int n = my_data->num_iterations;
-    for (int i = 0; i < n; i++) {
-        add(pointer, 1);
-        add(pointer, -1);
+    // Insert all elements into global list
+    for (int i = 0; i < num_iterations; i++) {
+	SortedList_insert(&head, &arr[i]);
     }
-    if (pthread_mutex_unlock(&lock) != 0) {
-        fprintf(stderr, "Error unlocking mutex.\n");
-        // pthread_mutex_unlock isn't a syscall
-        exit(2);
+    // Check list length
+    if (SortedList_length(&head) < num_iterations) {
+	fprintf(stderr, "Error inserting elements.\n");
+	exit(2);
     }
-    return NULL;
-}
-
-void* incr_and_decr_sync_s(void* threadarg) {
-    while (__sync_lock_test_and_set(&spin_lock, 1)) {
-	continue;
+    // Look up and delete each of the keys previously inserted
+    for (int i = 0; i < num_iterations; i++) {
+	SortedListElement_t* element = SortedList_lookup(&head, arr[i].key);
+	if (element == NULL) {
+	    fprintf(stderr, "Error looking up element.\n");
+	    exit(2);
+	}
+	if (SortedList_delete(element) != 0) {
+	    fprintf(stderr, "Error deleting element.\n");
+	    exit(2);
+	}
     }
-    struct thread_data *my_data;
-    my_data = (struct thread_data *) threadarg;
-    long long *pointer = my_data->pointer;
-    int n = my_data->num_iterations;
-    for (int i = 0; i < n; i++) {
-        add(pointer, 1);
-        add(pointer, -1);
+    
+    if (*arg_sync == 'm') {
+	if (pthread_mutex_unlock(&lock) != 0) {
+	    fprintf(stderr, "Error unlocking mutex.\n");
+	    // pthread_mutex_unlock isn't a syscall
+	    exit(2);
+	}
     }
-    __sync_lock_release(&spin_lock);
-    return NULL;
-}
-
-void add_c(long long *pointer, long long value) {
-    long long old = 0, new = 0;
-    do {
-	old = *pointer;
-	new = old + value;
-	if (opt_yield)
-	    sched_yield();
-    } while (__sync_val_compare_and_swap(pointer, old, new) != old);
-}
-
-void* incr_and_decr_sync_c(void* threadarg) {
-    struct thread_data *my_data;
-    my_data = (struct thread_data *) threadarg;
-    long long *pointer = my_data->pointer;
-    int n = my_data->num_iterations;
-    for (int i = 0; i < n; i++) {
-        add_c(pointer, 1);
-        add_c(pointer, -1);
+    else if (*arg_sync == 's') {
+	__sync_lock_release(&spin_lock);
     }
     return NULL;
 }
@@ -139,8 +108,7 @@ int main(int argc, char** argv) {
     int opt_sync = 0;
     char* arg_threads;
     char* arg_iterations;
-    char* arg_sync;
-    char* arg_yield;
+    char* arg_yield = NULL;
     char default_val = '1';
     
     while (1) {
@@ -148,7 +116,7 @@ int main(int argc, char** argv) {
         static struct option long_options[] = {
 	    {"threads",    optional_argument, 0,  0 },
 	    {"iterations", optional_argument, 0,  0 },
-	    {"yield",      required_argument, 0,  0 },
+	    {"yield",      optional_argument, 0,  0 },
             {0,         0,                    0,  0 }
         };
 
@@ -201,14 +169,13 @@ int main(int argc, char** argv) {
 	arg_threads = &default_val;
     if (opt_iterations == 0)
         arg_iterations = &default_val;
-    int num_threads = atoi(arg_threads);
-    int num_iterations = atoi(arg_iterations);
+    num_threads = atoi(arg_threads);
+    num_iterations = atoi(arg_iterations);
 
     long long counter = 0;
     struct timespec start, stop;
 
     // Initialize an empty list
-    SortedList_t head;
     head.key = NULL;
     head.next = NULL;
     head.prev = NULL;
@@ -227,26 +194,10 @@ int main(int argc, char** argv) {
 	exit(2);
     }
 
+    // Start the specified # of threads and wait for all to complete
     pthread_t thread_ids[num_threads];
-    struct thread_data threadarg;
-    threadarg.pointer = &counter;
-    threadarg.num_iterations = num_iterations;
     for (int i = 0; i < num_threads; i++) {
-	int error = 0;
-	if (opt_sync) {
-	    if (*arg_sync  == 'm') {
-		error = pthread_create(&thread_ids[i], NULL, incr_and_decr_sync_m, (void *) &threadarg);
-	    }
-	    else if (*arg_sync  == 's') {
-                error = pthread_create(&thread_ids[i], NULL, incr_and_decr_sync_s, (void *) &threadarg);
-            }
-	    else if (*arg_sync  == 'c') {
-                error = pthread_create(&thread_ids[i], NULL, incr_and_decr_sync_c, (void *) &threadarg);
-            }
-	}
-	else {
-	    error = pthread_create(&thread_ids[i], NULL, incr_and_decr, (void *) &threadarg);
-	}
+	int error = pthread_create(&thread_ids[i], NULL, thread_start_routine, (void *) (element_arr + num_iterations * i));
 	if (error != 0) {
 	    fprintf(stderr, "Error creating thread.\npthread_create: %s\n", strerror(error));
 	    // pthread_create isn't a syscall
@@ -256,11 +207,6 @@ int main(int argc, char** argv) {
     for (int i = 0; i < num_threads; i++) {
         pthread_join(thread_ids[i], NULL);
     }
-    if (pthread_mutex_destroy(&lock) != 0) {
-        fprintf(stderr, "Error destroying mutex.\n");
-        // pthread_mutex_destroy isn't a syscall
-        exit(2);
-    }
 
     // Note stop time
     if (clock_gettime(CLOCK_MONOTONIC, &stop) == -1) {
@@ -268,41 +214,26 @@ int main(int argc, char** argv) {
         exit(1);
     }
 
-    long total_run_time = (stop.tv_sec - start.tv_sec) * 1000000000L + (stop.tv_nsec - start.tv_nsec);
-    long total_ops = num_threads * num_iterations * 2;
-    long avg_time_per_op = total_run_time / total_ops;
-    if (opt_yield) {
-	if (!opt_sync) {
-	    fprintf(stdout, "add-yield-none,%d,%d,%ld,%ld,%ld,%lld\n", num_threads, num_iterations, total_ops, total_run_time, avg_time_per_op, counter);
-	}
-	else {
-	    if (*arg_sync == 'm') {
-		fprintf(stdout, "add-yield-m,%d,%d,%ld,%ld,%ld,%lld\n", num_threads, num_iterations, total_ops, total_run_time, avg_time_per_op, counter);
-	    }
-	    else if (*arg_sync == 's') {
-                fprintf(stdout, "add-yield-s,%d,%d,%ld,%ld,%ld,%lld\n", num_threads, num_iterations, total_ops, total_run_time, avg_time_per_op, counter);
-            }
-	    else if (*arg_sync == 'c') {
-                fprintf(stdout, "add-yield-c,%d,%d,%ld,%ld,%ld,%lld\n", num_threads, num_iterations, total_ops, total_run_time, avg_time_per_op, counter);
-            }
-	}
+    // Check length of list is 0
+    if (SortedList_length(&head) != 0) {
+	fprintf(stderr, "Error: length of list is not 0 at the end.\n");
+        exit(2);
     }
-    else {
-	if (opt_sync) {
-	    if (*arg_sync == 'm') {
-                fprintf(stdout, "add-m,%d,%d,%ld,%ld,%ld,%lld\n", num_threads, num_iterations, total_ops, total_run_time, avg_time_per_op, counter);
-            }
-            else if (*arg_sync == 's') {
-                fprintf(stdout, "add-s,%d,%d,%ld,%ld,%ld,%lld\n", num_threads, num_iterations, total_ops, total_run_time, avg_time_per_op, counter);
-            }
-            else if (*arg_sync == 'c') {
-                fprintf(stdout, "add-c,%d,%d,%ld,%ld,%ld,%lld\n", num_threads, num_iterations, total_ops, total_run_time, avg_time_per_op, counter);
-            }
-	}
-	else {
-	    fprintf(stdout, "add-none,%d,%d,%ld,%ld,%ld,%lld\n", num_threads, num_iterations, total_ops, total_run_time, avg_time_per_op, counter);
-	}
-    }    
 
+    // Print output data
+    long total_run_time = (stop.tv_sec - start.tv_sec) * 1000000000L + (stop.tv_nsec - start.tv_nsec);
+    long total_ops = num_threads * num_iterations * 3;
+    long avg_time_per_op = total_run_time / total_ops;
+    int num_lists = 1;
+    // TODO: yieldopts, syncopts
+
+    fprintf(stdout, "list-yieldopts-syncopts,%d,%d,%d,%ld,%ld,%ld\n", num_threads, num_iterations, num_lists, total_ops, total_run_time, avg_time_per_op);
+
+    if (pthread_mutex_destroy(&lock) != 0) {
+        fprintf(stderr, "Error destroying mutex.\n");
+        // pthread_mutex_destroy isn't a syscall
+        exit(2);
+    }
+    
     exit(0);
 }
