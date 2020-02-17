@@ -6,6 +6,17 @@ Included files:
 
 QUESTION 2.1.1 - causing conflicts:
 - Why does it take many iterations before errors are seen?
+The more iterations performed by each thread, the greater the processing time of the shared variableby an individual thread, and the more likely that the thread will be preempted by the thread scheduler before it is finished and while it is executing a critical section. As a result, with many iterations it is more likely that multiple threads are executing the critical section in parallel, and more likely that this race condition leaves the program in an invalid state (i.e., counter is not 0 when the program ends).
 - Why does a significantly smaller number of iterations so seldom fail?
-The answer to both questions is the same: for a small enough number of iterations a thread is likely to finish its' processing of the shared data before the next thread is created and the thread scheduler has a chance to preempt the first thread and context switch to the next thread (i.e., before the end of the time slice). As a result, the likelihood of a race condition is lower and the likelihood of all iterations for a single thread being an atomic operation is higher.
+For a small enough number of iterations a thread is likely to finish its' processing of the shared variable before the next thread is created and the thread scheduler has a chance to preempt the first thread and context switch to the next thread (i.e., before the end of the time slice). As a result, the likelihood of a race condition is lower and the likelihood of all iterations for a single thread being an atomic operation is higher.
+
+QUESTION 2.1.2 - cost of yielding:
+- Why are the --yield runs so much slower?
+Since each thread calls sched_yield() every time the counter is incremented or decremented, it relinquishes the CPU and the thread is moved to the end of the scheduling queue, and (assuming multiple threads) a new thread gets to run. Although not as expensive as a process context switch, a thread context switch is still a costly operation. Since we do an expensive thread context switch 2 * num_threads * num_iterations times and other threads are allowed to run on the CPU, the --yield runs are much slower.
+- Where is the additional time going?
+The additional time is going toward thread context switches which can require switching in and out of kernel mode and saving/restoring register state. There could also time spent by the thread scheduler choosing which thread will run next. Last, when a thread yields, the time other threads use the CPU is included in the total run time of the original thread.
+- Is it possible to get valid per-operation timings if we are using the --yield option?
+No.
+- If so, explain how. If not, explain why not.
+It is not possible because we can't accurately track the additional time spent on context switches and running other threads. Even if we tried to change our implementation so that a thread subtracted the time from when it called sched_yield() until it reached the next line of code, the thread could still be preempted by the thread scheduler at any time and we'd have no way of accounting for the time that passed until it was the thread's turn to run again.
 

@@ -1,15 +1,33 @@
 # NAME: Stewart Dulaney
 # EMAIL: sdulaney@ucla.edu
-# ID: 904-064-791 
+# ID: 904-064-791
+
+CC = gcc
+CFLAGS = -g -Wall -Wextra -lpthread
+ID = 904-064-791
+ARCHIVE = lab2a-$(ID).tar.gz
+OUTPUT = lab2_add.csv lab2_list.csv
+GRAPHS = lab2_add-1.png lab2_add-2.png lab2_add-3.png lab2_add-4.png lab2_add-5.png, lab2_list-1.png lab2_list-2.png lab2_list-3.png lab2_list-4.png
+SCRIPTS = lab2_add.gp lab2_list.gp
+sources = lab2_add.c SortedList.h Makefile README $(OUTPUT) $(GRAPHS) $(SCRIPTS)
 
 build: lab2_add
 
 lab2_add:
-	gcc lab2_add.c -o lab2_add -g -Wall -Wextra -lpthread
+	$(CC) $(CFLAGS) lab2_add.c -o lab2_add
+
+tests:
+	chmod +x test.sh
+	-./test.sh > lab2_add.csv
+
+graphs:
+	chmod +x lab2_add.gp
+	gnuplot lab2_add.gp
+
+dist:
+	tar -czf $(ARCHIVE) $(sources)
 
 clean:
 	-rm lab2_add
 	-rm lab2a-904-064-791.tar.gz
 
-dist:
-	tar -czf lab2a-904-064-791.tar.gz lab2_add.c Makefile README
