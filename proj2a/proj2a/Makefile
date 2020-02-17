@@ -6,15 +6,20 @@ CC = gcc
 CFLAGS = -g -Wall -Wextra -lpthread
 ID = 904-064-791
 ARCHIVE = lab2a-$(ID).tar.gz
-OUTPUT = lab2_add.csv lab2_list.csv
-GRAPHS = lab2_add-1.png lab2_add-2.png lab2_add-3.png lab2_add-4.png lab2_add-5.png, lab2_list-1.png lab2_list-2.png lab2_list-3.png lab2_list-4.png
+# OUTPUT = lab2_add.csv lab2_list.csv
+OUTPUT = lab2_add.csv
+# GRAPHS = lab2_add-1.png lab2_add-2.png lab2_add-3.png lab2_add-4.png lab2_add-5.png lab2_list-1.png lab2_list-2.png lab2_list-3.png lab2_list-4.png
+GRAPHS = lab2_add-1.png lab2_add-2.png lab2_add-3.png lab2_add-4.png lab2_add-5.png
 SCRIPTS = lab2_add.gp lab2_list.gp
-sources = lab2_add.c SortedList.h Makefile README $(OUTPUT) $(GRAPHS) $(SCRIPTS)
+sources = lab2_add.c lab2_list.c SortedList.c SortedList.h Makefile README $(OUTPUT) $(GRAPHS) $(SCRIPTS)
 
-build: lab2_add
+build: lab2_add lab2_list
 
 lab2_add:
 	$(CC) $(CFLAGS) lab2_add.c -o lab2_add
+
+lab2_list:
+	$(CC) $(CFLAGS) lab2_list.c SortedList.c -o lab2_list
 
 tests:
 	chmod +x test.sh
@@ -29,5 +34,6 @@ dist:
 
 clean:
 	-rm lab2_add
+	-rm lab2_list
 	-rm lab2a-904-064-791.tar.gz
 

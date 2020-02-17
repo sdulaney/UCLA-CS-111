@@ -154,7 +154,7 @@ int main(int argc, char** argv) {
 		break;
 	    
             case '?':
-		fprintf(stderr, "usage: ./lab2_add [OPTION]...\nvalid options: --threads=# (default 1), --iterations=# (default 1), --yield, --sync=[m OR s OR c]\n");
+		fprintf(stderr, "usage: ./lab2_add [OPTION]...\nvalid options: --threads=# (default 1), --iterations=# (default 1), --yield, --sync=[msc]\n");
 		exit(1);
 		break;
 

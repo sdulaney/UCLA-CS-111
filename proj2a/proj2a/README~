@@ -20,3 +20,8 @@ No.
 - If so, explain how. If not, explain why not.
 It is not possible because we can't accurately track the additional time spent on context switches and running other threads. Even if we tried to change our implementation so that a thread subtracted the time from when it called sched_yield() until it reached the next line of code, the thread could still be preempted by the thread scheduler at any time and we'd have no way of accounting for the time that passed until it was the thread's turn to run again.
 
+QUESTION 2.1.3 - measurement errors:
+- Why does the average cost per operation drop with increasing iterations?
+The average cost per operation drops because as the number of iterations increases, the overhead associated with thread creation becomes less significant as compared with the time spent running all iterations. This is because the cost of thread creation is shared among all iterations and amortized by a large number of iterations, bringing the average cost per operation down.
+- If the cost per iteration is a function of the number of iterations, how do we know how many iterations to run (or what the "correct" cost is)?
+We can see from the plot that the average cost per iteration decreases exponentially, and thus will eventually become stable. Once the curve is not decreasing significantly and displays some stability, the number of iterations at that point would be a good choice for achieving an estimate of the "correct" cost per iteration.
