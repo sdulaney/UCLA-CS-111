@@ -78,10 +78,6 @@ function dirCheck {
 		if [ $? -ne 0 ]; then
 			echo "Incorrect directory contents:"
 			diff /tmp/DIRSNAP.$2 /tmp/DIRCHECK.$2
-			echo "dirsnap:"
-			cat /tmp/DIRSNAP.$2
-			echo "dircheck:"
-			cat /tmp/DIRCHECK.$2
 			return 1
 		else
 			echo "    restored to freshly untar-ed state ... OK"

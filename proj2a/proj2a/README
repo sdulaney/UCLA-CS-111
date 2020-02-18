@@ -31,3 +31,16 @@ QUESTION 2.1.4 - costs of serialization:
 For small numbers of threads, race conditions and lock contention don't happen as often often so the overhead of synchronization is not as significant for the runs that use mutexes, spin-locks, and compare-and-swap. As such, they perform similar to the unprotected run.
 - Why do the three protected operations slow down as the number of threads rises?
 As the number of threads grows, race conditions and lock contention happen more often so the overhead of synchronization is higher. Each thread spends more time waiting for locks to be released so the average time per operation increases.
+
+QUESTION 2.2.1 - scalability of Mutex:
+- Compare the variation in time per mutex-protected operation vs the number of threads in Part-1 (adds) and Part-2 (sorted lists).
+
+- Comment on the general shapes of the curves, and explain why they have this shape.
+
+- Comment on the relative rates of increase and differences in the shapes of the curves, and offer an explanation for these differences.
+
+
+QUESTION 2.2.2 - scalability of spin locks:
+- Compare the variation in time per protected operation vs the number of threads for list operations protected by Mutex vs Spin locks. Comment on the general shapes of the curves, and explain why they have this shape.
+
+- Comment on the relative rates of increase and differences in the shapes of the curves, and offer an explanation for these differences.

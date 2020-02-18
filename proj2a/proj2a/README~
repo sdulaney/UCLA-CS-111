@@ -25,3 +25,9 @@ QUESTION 2.1.3 - measurement errors:
 The average cost per operation drops because as the number of iterations increases, the overhead associated with thread creation becomes less significant as compared with the time spent running all iterations. This is because the cost of thread creation is shared among all iterations and amortized by a large number of iterations, bringing the average cost per operation down.
 - If the cost per iteration is a function of the number of iterations, how do we know how many iterations to run (or what the "correct" cost is)?
 We can see from the plot that the average cost per iteration decreases exponentially, and thus will eventually become stable. Once the curve is not decreasing significantly and displays some stability, the number of iterations at that point would be a good choice for achieving an estimate of the "correct" cost per iteration.
+
+QUESTION 2.1.4 - costs of serialization:
+- Why do all of the options perform similarly for low numbers of threads?
+For small numbers of threads, race conditions and lock contention don't happen as often often so the overhead of synchronization is not as significant for the runs that use mutexes, spin-locks, and compare-and-swap. As such, they perform similar to the unprotected run.
+- Why do the three protected operations slow down as the number of threads rises?
+As the number of threads grows, race conditions and lock contention happen more often so the overhead of synchronization is higher. Each thread spends more time waiting for locks to be released so the average time per operation increases.
