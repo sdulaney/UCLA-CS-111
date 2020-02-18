@@ -42,8 +42,7 @@ void* incr_and_decr(void* threadarg) {
 void* incr_and_decr_sync_m(void* threadarg) {
     if (pthread_mutex_lock(&lock) != 0) {
         fprintf(stderr, "Error locking mutex.\n");
-        // pthread_mutex_lock isn't a syscall
-        exit(2);
+        exit(1);
     }
     struct thread_data *my_data;
     my_data = (struct thread_data *) threadarg;
@@ -55,8 +54,7 @@ void* incr_and_decr_sync_m(void* threadarg) {
     }
     if (pthread_mutex_unlock(&lock) != 0) {
         fprintf(stderr, "Error unlocking mutex.\n");
-        // pthread_mutex_unlock isn't a syscall
-        exit(2);
+        exit(1);
     }
     return NULL;
 }
@@ -173,19 +171,19 @@ int main(int argc, char** argv) {
 
     long long counter = 0;
     struct timespec start, stop;
+
+    if (pthread_mutex_init(&lock, NULL) != 0) { 
+        fprintf(stderr, "Error initializing mutex.\n"); 
+	exit(1);
+    }
+
     
     // Note start time
     if (clock_gettime(CLOCK_MONOTONIC, &start) == -1) {
 	fprintf(stderr, "Error retrieving time.\nclock_gettime: %s\n", strerror(errno));
         exit(1);
     }
-
-    if (pthread_mutex_init(&lock, NULL) != 0) { 
-        fprintf(stderr, "Error initializing mutex.\n"); 
-        // pthread_mutex_init isn't a syscall
-	exit(2);
-    }
-
+    
     pthread_t thread_ids[num_threads];
     struct thread_data threadarg;
     threadarg.pointer = &counter;
@@ -208,8 +206,7 @@ int main(int argc, char** argv) {
 	}
 	if (error != 0) {
 	    fprintf(stderr, "Error creating thread.\npthread_create: %s\n", strerror(error));
-	    // pthread_create isn't a syscall
-	    exit(2);
+	    exit(1);
 	}
     }
     for (int i = 0; i < num_threads; i++) {
@@ -260,8 +257,7 @@ int main(int argc, char** argv) {
 
     if (pthread_mutex_destroy(&lock) != 0) {
         fprintf(stderr, "Error destroying mutex.\n");
-        // pthread_mutex_destroy isn't a syscall
-        exit(2);
+        exit(1);
     }
     
     exit(0);

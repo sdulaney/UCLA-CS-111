@@ -173,12 +173,6 @@ int main(int argc, char** argv) {
 
     long long counter = 0;
     struct timespec start, stop;
-    
-    // Note start time
-    if (clock_gettime(CLOCK_MONOTONIC, &start) == -1) {
-	fprintf(stderr, "Error retrieving time.\nclock_gettime: %s\n", strerror(errno));
-        exit(1);
-    }
 
     if (pthread_mutex_init(&lock, NULL) != 0) { 
         fprintf(stderr, "Error initializing mutex.\n"); 
@@ -186,6 +180,13 @@ int main(int argc, char** argv) {
 	exit(2);
     }
 
+    
+    // Note start time
+    if (clock_gettime(CLOCK_MONOTONIC, &start) == -1) {
+	fprintf(stderr, "Error retrieving time.\nclock_gettime: %s\n", strerror(errno));
+        exit(1);
+    }
+    
     pthread_t thread_ids[num_threads];
     struct thread_data threadarg;
     threadarg.pointer = &counter;
@@ -214,11 +215,6 @@ int main(int argc, char** argv) {
     }
     for (int i = 0; i < num_threads; i++) {
         pthread_join(thread_ids[i], NULL);
-    }
-    if (pthread_mutex_destroy(&lock) != 0) {
-        fprintf(stderr, "Error destroying mutex.\n");
-        // pthread_mutex_destroy isn't a syscall
-        exit(2);
     }
 
     // Note stop time
@@ -263,5 +259,11 @@ int main(int argc, char** argv) {
 	}
     }    
 
+    if (pthread_mutex_destroy(&lock) != 0) {
+        fprintf(stderr, "Error destroying mutex.\n");
+        // pthread_mutex_destroy isn't a syscall
+        exit(2);
+    }
+    
     exit(0);
 }

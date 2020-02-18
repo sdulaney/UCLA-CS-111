@@ -27,18 +27,17 @@ SortedList_t head;
 void* thread_start_routine(void* elem_arr) {
     SortedListElement_t* arr = elem_arr;
     if (opt_sync && arg_sync != NULL) {
-    if (*arg_sync == 'm') {
-	if (pthread_mutex_lock(&lock) != 0) {
-	    fprintf(stderr, "Error locking mutex.\n");
-	    // pthread_mutex_lock isn't a syscall
-	    exit(2);
+	if (*arg_sync == 'm') {
+	    if (pthread_mutex_lock(&lock) != 0) {
+		fprintf(stderr, "Error locking mutex.\n");
+		exit(1);
+	    }
 	}
-    }
-    else if (*arg_sync == 's') {
-	while (__sync_lock_test_and_set(&spin_lock, 1)) {
-	    continue;
+	else if (*arg_sync == 's') {
+	    while (__sync_lock_test_and_set(&spin_lock, 1)) {
+		continue;
+	    }
 	}
-    }
     }
     // Insert all elements into global list
     for (int i = 0; i < num_iterations; i++) {
@@ -63,16 +62,15 @@ void* thread_start_routine(void* elem_arr) {
 	}
     }
     if (opt_sync && arg_sync != NULL) {
-    if (*arg_sync == 'm') {
-	if (pthread_mutex_unlock(&lock) != 0) {
-	    fprintf(stderr, "Error unlocking mutex.\n");
-	    // pthread_mutex_unlock isn't a syscall
-	    exit(2);
+	if (*arg_sync == 'm') {
+	    if (pthread_mutex_unlock(&lock) != 0) {
+		fprintf(stderr, "Error unlocking mutex.\n");
+		exit(1);
+	    }
 	}
-    }
-    else if (*arg_sync == 's') {
-	__sync_lock_release(&spin_lock);
-    }
+	else if (*arg_sync == 's') {
+	    __sync_lock_release(&spin_lock);
+	}
     }
     return NULL;
 }
@@ -175,7 +173,7 @@ int main(int argc, char** argv) {
 		break;
 	    
             case '?':
-		fprintf(stderr, "usage: ./lab2_list [OPTION]...\nvalid options: --threads=# (default 1), --iterations=# (default 1), --yield=[idl]\n");
+		fprintf(stderr, "usage: ./lab2_list [OPTION]...\nvalid options: --threads=# (default 1), --iterations=# (default 1), --yield=[idl], --sync=[ms]\n");
 		exit(1);
 		break;
 
@@ -211,19 +209,16 @@ int main(int argc, char** argv) {
 
     if (pthread_mutex_init(&lock, NULL) != 0) { 
         fprintf(stderr, "Error initializing mutex.\n"); 
-        // pthread_mutex_init isn't a syscall
-	exit(2);
+	exit(1);
     }
 
     // Start the specified # of threads and wait for all to complete
-    // TODO: Use dynamic array instead?
     pthread_t thread_ids[num_threads];
     for (int i = 0; i < num_threads; i++) {
 	int error = pthread_create(&thread_ids[i], NULL, thread_start_routine, (void *) (element_arr + num_iterations * i));
 	if (error != 0) {
 	    fprintf(stderr, "Error creating thread.\npthread_create: %s\n", strerror(error));
-	    // pthread_create isn't a syscall
-	    exit(2);
+	    exit(1);
 	}
     }
     for (int i = 0; i < num_threads; i++) {
@@ -247,7 +242,6 @@ int main(int argc, char** argv) {
     long total_ops = num_threads * num_iterations * 3;
     long avg_time_per_op = total_run_time / total_ops;
     int num_lists = 1;
-    // TODO: yieldopts, syncopts
     char* yieldopts = NULL;
     switch (opt_yield)  {
     case 0:
@@ -290,8 +284,7 @@ int main(int argc, char** argv) {
 
     if (pthread_mutex_destroy(&lock) != 0) {
         fprintf(stderr, "Error destroying mutex.\n");
-        // pthread_mutex_destroy isn't a syscall
-        exit(2);
+        exit(1);
     }
     
     exit(0);

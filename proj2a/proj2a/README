@@ -4,6 +4,71 @@ ID: 904-064-791
 
 Included files:
 
+lab2_add.c:
+- (Part-1) a C program that implements and tests a shared variable add function
+- usage: ./lab2_add [OPTION]...
+- valid options: --threads=# (default 1), --iterations=# (default 1), --yield, --sync=[msc]
+
+SortedList.h:
+- a header file describing the interfaces for linked list operations
+
+SortedList.c:
+- a C module that implements insert, delete, lookup, and length methods for a sorted doubly linked list
+
+lab2_list.c:
+- (Part-2) a C program that tests operations on a shared linked list
+- usage: ./lab2_list [OPTION]...
+- valid options: --threads=# (default 1), --iterations=# (default 1), --yield=[idl], --sync=[ms]
+
+Makefile:
+- supports the following targets:
+  build (default) ... build both the lab2_add and lab2_list executables
+  lab2_add ... build the lab2_add executable
+  lab2_list ... build the lab2_list executable
+  tests ... run all (over 200) specified test cases to generate results in CSV files
+  graphs ... use gnuplot to generate graphs
+  dist ... build the distribution tarball
+  clean ...  delete all files created by the Makefile
+
+lab2_add.csv:
+- results for all of the Part-1 tests
+
+lab2_list.csv:
+- results for all of the Part-2 tests
+
+lab2_add-1.png:
+- graph of threads and iterations required to generate a failure (with and without yields)
+
+lab2_add-2.png:
+- graph of average time per operation with and without yields
+
+lab2_add-3.png:
+- graph of average time per (single threaded) operation vs. the number of iterations
+
+lab2_add-4.png:
+- graph of threads and iterations that can run successfully with yields under each of the synchronization options
+
+lab2_add-5.png:
+- graph of average time per (protected) operation vs. the number of threads
+
+lab2_list-1.png:
+- graph of average time per (single threaded) unprotected operation vs. number of iterations (illustrating the correction of the per-operation cost for the list length)
+
+lab2_list-2.png:
+- graph of threads and iterations required to generate a failure (with and without yields)
+
+lab2_list-3.png:
+- graph of iterations that can run (protected) without failure
+
+lab2_list-4.png:
+- graph of (length-adjusted) cost per operation vs the number of threads for the various synchronization options
+
+test.sh:
+- shell script to generate and capture results of Part-1 tests
+
+test_list.sh:
+- shell script to generate and capture results of Part-2 tests
+
 QUESTION 2.1.1 - causing conflicts:
 - Why does it take many iterations before errors are seen?
 The more iterations performed by each thread, the greater the processing time of the shared variableby an individual thread, and the more likely that the thread will be preempted by the thread scheduler before it is finished and while it is executing a critical section. As a result, with many iterations it is more likely that multiple threads are executing the critical section in parallel, and more likely that this race condition leaves the program in an invalid state (i.e., counter is not 0 when the program ends).
@@ -34,13 +99,14 @@ As the number of threads grows, race conditions and lock contention happen more 
 
 QUESTION 2.2.1 - scalability of Mutex:
 - Compare the variation in time per mutex-protected operation vs the number of threads in Part-1 (adds) and Part-2 (sorted lists).
-
+As the number of threads increases, in Part-1 (adds) we see a slight decrease in time per mutex-protected operation, and in Part-2 (sorted lists) we see almost no change.
 - Comment on the general shapes of the curves, and explain why they have this shape.
-
+The curve for Part-1 is close to linear and although it was unexpected to me, it has a small negative slope. It's possible that increasing the number of threads continues to amortize the cost of thread creation, with this decrease in cost being greater than the cost of increased lock contention. Since threads waiting on a mutex lock aren't run by the CPU until the lock is available, this could explain why the overhead of increased lock contention is less significant. One could also hypothesize that external factors such as a busy server could explain this shape. For Part-2 the curve is more or less flat with no slope. This could be explained by the entire linked list being locked while a single thread inserts, checks the length, looks up elements, and deletes them. These O(n) operations are more expensive than simple addition, so the locks in Part-2 stay locked for longer periods and as a result there is less overhead added for context switching as the number of threads increases.
 - Comment on the relative rates of increase and differences in the shapes of the curves, and offer an explanation for these differences.
-
+This was answered in detail for the previous question.
 
 QUESTION 2.2.2 - scalability of spin locks:
 - Compare the variation in time per protected operation vs the number of threads for list operations protected by Mutex vs Spin locks. Comment on the general shapes of the curves, and explain why they have this shape.
-
+The curve for mutex-protected list operations is relatively flat as previously discussed, with notable reasons being because threads are put to sleep until a lock is available so they don't contribute to total run time and because less context switches occur when the entire linked list is locked for a long period. The curve for spin lock protected list operations is more or less linear with a positive slope which can be attributed to more CPU cycles being spent checking to see if the lock is available as the number of threads (and lock contention) increases.
 - Comment on the relative rates of increase and differences in the shapes of the curves, and offer an explanation for these differences.
+The cost per list operation for spin locks grows much faster than that of mutexes, which is relatively stable. This is because spin locks waste a lot of time checking to see if the lock is available when more threads are competing for the lock. On the other hand, with mutexes the threads are put to sleep if a section is locked so contention doesn't result in as many wastes cycles. The cost is about the same for both for a small number of threads. This is because without less lock contention the CPU wastes less time on the spinning threads.
