@@ -312,3 +312,18 @@
 ./lab2_list --sync=s --threads=12 --iterations=8 --yield=dl
 ./lab2_list --sync=s --threads=12 --iterations=16 --yield=dl
 ./lab2_list --sync=s --threads=12 --iterations=32 --yield=dl
+# lab2_list-4.png
+./lab2_list --sync=m --threads=1 --iterations=1000
+./lab2_list --sync=m --threads=2 --iterations=1000
+./lab2_list --sync=m --threads=4 --iterations=1000
+./lab2_list --sync=m --threads=8 --iterations=1000
+./lab2_list --sync=m --threads=12 --iterations=1000
+./lab2_list --sync=m --threads=16 --iterations=1000
+./lab2_list --sync=m --threads=24 --iterations=1000
+./lab2_list --sync=s --threads=1 --iterations=1000
+./lab2_list --sync=s --threads=2 --iterations=1000
+./lab2_list --sync=s --threads=4 --iterations=1000
+./lab2_list --sync=s --threads=8 --iterations=1000
+./lab2_list --sync=s --threads=12 --iterations=1000
+./lab2_list --sync=s --threads=16 --iterations=1000
+./lab2_list --sync=s --threads=24 --iterations=1000

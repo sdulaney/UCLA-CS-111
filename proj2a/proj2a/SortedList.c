@@ -9,7 +9,7 @@
 #include "SortedList.h"
 
 void SortedList_insert(SortedList_t *list, SortedListElement_t *element) {
-    if (list == NULL || element == NULL || list->key != NULL)
+    if (list == NULL || element == NULL || list->key != NULL || element->key == NULL)
 	return;
     // Empty list
     if (list->next == NULL) {
@@ -24,7 +24,7 @@ void SortedList_insert(SortedList_t *list, SortedListElement_t *element) {
     SortedList_t* prev = list;
     SortedList_t* curr = list->next;
     // Insert at beginning
-    if (strcmp(curr->key, element->key) >= 0) {
+    if (curr->key != NULL && strcmp(curr->key, element->key) >= 0) {
 	if (opt_yield & INSERT_YIELD)
             sched_yield();
 	element->next = curr;
@@ -34,7 +34,7 @@ void SortedList_insert(SortedList_t *list, SortedListElement_t *element) {
 	return;
     }
     while (curr != list) {
-	if (strcmp(curr->key, element->key) <= 0)
+	if (curr->key != NULL && strcmp(curr->key, element->key) <= 0)
 	    break;
 	if (opt_yield & INSERT_YIELD)
             sched_yield();
@@ -75,7 +75,7 @@ SortedListElement_t *SortedList_lookup(SortedList_t *list, const char *key) {
 	return NULL;
     SortedList_t* curr = list->next;
     while (curr != list) {
-	if (strcmp(curr->key, key) == 0)
+	if (curr->key != NULL && strcmp(curr->key, key) == 0)
 	    return curr;
 	if (opt_yield & LOOKUP_YIELD)
 	    sched_yield();

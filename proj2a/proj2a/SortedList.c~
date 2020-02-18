@@ -9,7 +9,7 @@
 #include "SortedList.h"
 
 void SortedList_insert(SortedList_t *list, SortedListElement_t *element) {
-    if (list == NULL || element == NULL || list->key != NULL)
+    if (list == NULL || element == NULL || list->key != NULL || element->key == NULL)
 	return;
     // Empty list
     if (list->next == NULL) {
@@ -27,8 +27,8 @@ void SortedList_insert(SortedList_t *list, SortedListElement_t *element) {
     if (strcmp(curr->key, element->key) >= 0) {
 	if (opt_yield & INSERT_YIELD)
             sched_yield();
-	element->next = list->next;
-	element->prev = list;
+	element->next = curr;
+	element->prev = prev;
 	list->next = element;
 	element->next->prev = element;
 	return;
@@ -36,6 +36,8 @@ void SortedList_insert(SortedList_t *list, SortedListElement_t *element) {
     while (curr != list) {
 	if (strcmp(curr->key, element->key) <= 0)
 	    break;
+	if (opt_yield & INSERT_YIELD)
+            sched_yield();
 	prev = curr;
 	curr = curr->next;
     }

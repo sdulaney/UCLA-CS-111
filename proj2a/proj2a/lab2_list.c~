@@ -26,25 +26,28 @@ SortedList_t head;
 
 void* thread_start_routine(void* elem_arr) {
     SortedListElement_t* arr = elem_arr;
-    if (opt_sync && *arg_sync == 'm') {
+    if (opt_sync && arg_sync != NULL) {
+    if (*arg_sync == 'm') {
 	if (pthread_mutex_lock(&lock) != 0) {
 	    fprintf(stderr, "Error locking mutex.\n");
 	    // pthread_mutex_lock isn't a syscall
 	    exit(2);
 	}
     }
-    else if (opt_sync && *arg_sync == 's') {
+    else if (*arg_sync == 's') {
 	while (__sync_lock_test_and_set(&spin_lock, 1)) {
 	    continue;
 	}
+    }
     }
     // Insert all elements into global list
     for (int i = 0; i < num_iterations; i++) {
 	SortedList_insert(&head, &arr[i]);
     }
     // Check list length
-    if (SortedList_length(&head) < num_iterations) {
-	fprintf(stderr, "Error inserting elements.\n");
+    int length = SortedList_length(&head);
+    if (length < num_iterations) {
+	fprintf(stderr, "Error inserting elements: got %d instead of %d.\n", length, num_iterations);
 	exit(2);
     }
     // Look up and delete each of the keys previously inserted
@@ -59,16 +62,17 @@ void* thread_start_routine(void* elem_arr) {
 	    exit(2);
 	}
     }
-    
-    if (opt_sync && *arg_sync == 'm') {
+    if (opt_sync && arg_sync != NULL) {
+    if (*arg_sync == 'm') {
 	if (pthread_mutex_unlock(&lock) != 0) {
 	    fprintf(stderr, "Error unlocking mutex.\n");
 	    // pthread_mutex_unlock isn't a syscall
 	    exit(2);
 	}
     }
-    else if (opt_sync && *arg_sync == 's') {
+    else if (*arg_sync == 's') {
 	__sync_lock_release(&spin_lock);
+    }
     }
     return NULL;
 }

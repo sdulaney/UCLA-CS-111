@@ -1,12 +1,12 @@
 #!/bin/sh
 
-# lab2_list-1.png
+echo "lab2_list-1.png"
 ./lab2_list --iterations=10
 ./lab2_list --iterations=100
 ./lab2_list --iterations=1000
 ./lab2_list --iterations=10000
 ./lab2_list --iterations=20000
-# lab2_list-2.png
+echo "lab2_list-2.png"
 ./lab2_list --threads=2 --iterations=1
 ./lab2_list --threads=2 --iterations=10
 ./lab2_list --threads=2 --iterations=100
@@ -119,7 +119,7 @@
 ./lab2_list --threads=12 --iterations=8 --yield=dl
 ./lab2_list --threads=12 --iterations=16 --yield=dl
 ./lab2_list --threads=12 --iterations=32 --yield=dl
-# lab2_list-3.png
+echo "lab2_list-3.png"
 ./lab2_list --sync=m --threads=2 --iterations=1 --yield=i
 ./lab2_list --sync=m --threads=2 --iterations=2 --yield=i
 ./lab2_list --sync=m --threads=2 --iterations=4 --yield=i
@@ -312,7 +312,7 @@
 ./lab2_list --sync=s --threads=12 --iterations=8 --yield=dl
 ./lab2_list --sync=s --threads=12 --iterations=16 --yield=dl
 ./lab2_list --sync=s --threads=12 --iterations=32 --yield=dl
-# lab2_list-4.png
+echo "lab2_list-4.png"
 ./lab2_list --sync=m --threads=1 --iterations=1000
 ./lab2_list --sync=m --threads=2 --iterations=1000
 ./lab2_list --sync=m --threads=4 --iterations=1000
