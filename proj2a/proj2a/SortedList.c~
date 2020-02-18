@@ -11,19 +11,50 @@
 void SortedList_insert(SortedList_t *list, SortedListElement_t *element) {
     if (list == NULL || element == NULL || list->key != NULL)
 	return;
-    SortedList_t* prev = list
+    // Empty list
+    if (list->next == NULL) {
+	if (opt_yield & INSERT_YIELD)
+	    sched_yield();
+	list->next = element;
+	list->prev = element;
+	element->next = list;
+	element->prev = list;
+	return;
+    }
+    SortedList_t* prev = list;
     SortedList_t* curr = list->next;
+    // Insert at beginning
+    if (strcmp(curr->key, element->key) >= 0) {
+	if (opt_yield & INSERT_YIELD)
+            sched_yield();
+	element->next = list->next;
+	element->prev = list;
+	list->next = element;
+	element->next->prev = element;
+	return;
+    }
     while (curr != list) {
-	if (strcmp(curr->key, element->key) < 0)
+	if (strcmp(curr->key, element->key) <= 0)
 	    break;
 	prev = curr;
 	curr = curr->next;
     }
+    // Insert at end
+    if (curr == list) {
+	if (opt_yield & INSERT_YIELD)
+	    sched_yield();
+	curr->prev->next = element;
+	element->prev = curr->prev;
+	curr->prev = element;
+	element->next = curr;
+	return;
+    }
+    // Insert at middle
     if (opt_yield & INSERT_YIELD)
 	sched_yield();
-    element->next = prev->next;
-    element->prev = prev;
-    prev->next = element;
+    element->next = curr->next;
+    element->prev = curr;
+    curr->next = element;
     element->next->prev = element;
 }
 
