@@ -31,7 +31,7 @@ graphs: clean tests
 	-chmod +x lab2_list.gp
 	-gnuplot lab2_list.gp
 
-dist: clean graphs profile
+dist: clean graphs
 	tar -czf $(ARCHIVE) $(sources)
 
 clean:

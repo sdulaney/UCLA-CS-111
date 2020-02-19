@@ -34,7 +34,7 @@ set datafile separator ","
 
 set title "List-1: Throughput vs Threads"
 set xlabel "Threads"
-set logscale x 2
+set logscale x 10
 set ylabel "Total # of Operations per second"
 set logscale y 10
 set output 'lab2b_1.png'
