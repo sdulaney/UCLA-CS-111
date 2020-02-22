@@ -1,6 +1,6 @@
 #!/bin/sh
 
-#  echo "lab2b_1.png"
+# lab2b_1.png, lab2b_2.png
 ./lab2_list --sync=m --iterations=1000 --threads=1
 ./lab2_list --sync=m --iterations=1000 --threads=2
 ./lab2_list --sync=m --iterations=1000 --threads=4

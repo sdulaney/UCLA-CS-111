@@ -24,3 +24,12 @@ while (__sync_lock_test_and_set(&spin_lock, 1)) {
 This accounts for 408/458 * 100 = 89.1% of samples, while the remaining (only) 10.9% are running SortedList_lookup.
 - Why does this operation become so expensive with large numbers of threads?
 With large numbers of threads this operation becomes very expensive because with high lock contention all other threads spend cycles spinning and checking the spin lock until a single thread finishes all of its work on the list (the critical section). So threads spend a lot of time spinning in the loop above, waiting to get the lock for the critical section.
+
+QUESTION 2.3.3 - Mutex Wait Time:
+Look at the average time per operation (vs. # threads) and the average wait-for-mutex time (vs. #threads).
+- Why does the average lock-wait time rise so dramatically with the number of contending threads?
+As the number of contending threads increases, it is more likely that the lock will be unavailable when a thread needs it. In addition, a pool/queue of multiple threads may be waiting on the same lock, causing the dramatic increase in time to get a lock. For example, a thread could have to wait while all other threads get the lock and execute their critical section first, depending on the algorithm for contending threads.
+- Why does the completion time per operation rise (less dramatically) with the number of contending threads?
+As lock-wait time increases with the number of contending threads, time per operation must also rise because the time to execute the critical section stays the same. The increased overhead of mutex synchronization and the increase in lock-wait time are responsible for the increased completion time per operation.
+- How is it possible for the wait time per operation to go up faster (or higher) than the completion time per operation?
+The completion time per operation is calculated in the parent thread using wall time. On the other hand, lock-wait time per operation is calculated in each individual thread created by the parent thread. The time periods of waiting of individual threads can overlap when multiple threads are waiting at the same time, which explains how the lock-wait time operation can go up faster/higher than the completion time per operation. When a nanosecond is added to the total completion time, multiple nanoseconds can be added to the total mutex wait time when multiple threads are waiting.

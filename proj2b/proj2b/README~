@@ -15,3 +15,21 @@ In high-thread spin-lock tests, most of the cycles would be spent spinning and c
 - Where do you believe most of the time/cycles are being spent in the high-thread mutex tests?
 In high-thread mutex tests, most of the time/cycles are spent on either context switches or list operations. While context switches are very expensive, more cycles could be spent on list operations if the list was long enough (linear time operations). On the other hand, if the list is short, more cycles would be spent on switching from user mode to kernel mode and back for a context switch.
 
+QUESTION 2.3.2 - Execution Profiling:
+- Where (what lines of code) are consuming most of the cycles when the spin-lock version of the list exerciser is run with a large number of threads?
+When the spin-lock version of the list exerciser is run with a large number of threads, most of the cycles are consumed by the lines of code checking if the spin lock is available (i.e., the while loop that spins and runs __sync_lock_test_and_set until the lock is available):
+while (__sync_lock_test_and_set(&spin_lock, 1)) {
+      continue;
+}
+This accounts for 408/458 * 100 = 89.1% of samples, while the remaining (only) 10.9% are running SortedList_lookup.
+- Why does this operation become so expensive with large numbers of threads?
+With large numbers of threads this operation becomes very expensive because with high lock contention all other threads spend cycles spinning and checking the spin lock until a single thread finishes all of its work on the list (the critical section). So threads spend a lot of time spinning in the loop above, waiting to get the lock for the critical section.
+
+QUESTION 2.3.3 - Mutex Wait Time:
+Look at the average time per operation (vs. # threads) and the average wait-for-mutex time (vs. #threads).
+- Why does the average lock-wait time rise so dramatically with the number of contending threads?
+
+- Why does the completion time per operation rise (less dramatically) with the number of contending threads?
+
+- How is it possible for the wait time per operation to go up faster (or higher) than the completion time per operation?
+
