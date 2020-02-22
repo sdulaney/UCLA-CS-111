@@ -35,8 +35,8 @@ struct thread_data {
 void * incr_and_decr(void * threadarg) {
     struct thread_data * my_data;
     my_data = (struct thread_data * ) threadarg;
-    long long * pointer = my_data - > pointer;
-    int n = my_data - > num_iterations;
+    long long * pointer = my_data -> pointer;
+    int n = my_data -> num_iterations;
     for (int i = 0; i < n; i++) {
         add(pointer, 1);
         add(pointer, -1);
@@ -47,8 +47,8 @@ void * incr_and_decr(void * threadarg) {
 void * incr_and_decr_sync_m(void * threadarg) {
     struct thread_data * my_data;
     my_data = (struct thread_data * ) threadarg;
-    long long * pointer = my_data - > pointer;
-    int n = my_data - > num_iterations;
+    long long * pointer = my_data -> pointer;
+    int n = my_data -> num_iterations;
     for (int i = 0; i < n; i++) {
         // Get lock
         if (pthread_mutex_lock( & lock) != 0) {
@@ -77,32 +77,26 @@ void * incr_and_decr_sync_m(void * threadarg) {
 }
 
 void * incr_and_decr_sync_s(void * threadarg) {
-    // Get lock
-    while (__sync_lock_test_and_set( & spin_lock, 1)) {
-        continue;
-    }
     struct thread_data * my_data;
     my_data = (struct thread_data * ) threadarg;
-    long long * pointer = my_data - > pointer;
-    int n = my_data - > num_iterations;
+    long long * pointer = my_data -> pointer;
+    int n = my_data -> num_iterations;
     for (int i = 0; i < n; i++) {
-	// Get lock
-    while (__sync_lock_test_and_set( & spin_lock, 1)) {
-        continue;
-    }
+        // Get lock
+        while (__sync_lock_test_and_set( & spin_lock, 1)) {
+            continue;
+        }
         add(pointer, 1);
-	// Release lock
-    __sync_lock_release( & spin_lock);
-	// Get lock
-    while (__sync_lock_test_and_set( & spin_lock, 1)) {
-        continue;
-    }
+        // Release lock
+        __sync_lock_release( & spin_lock);
+        // Get lock
+        while (__sync_lock_test_and_set( & spin_lock, 1)) {
+            continue;
+        }
         add(pointer, -1);
-	// Release lock
-    __sync_lock_release( & spin_lock);
+        // Release lock
+        __sync_lock_release( & spin_lock);
     }
-    // Release lock
-    __sync_lock_release( & spin_lock);
     return NULL;
 }
 
@@ -119,8 +113,8 @@ void add_c(long long * pointer, long long value) {
 void * incr_and_decr_sync_c(void * threadarg) {
     struct thread_data * my_data;
     my_data = (struct thread_data * ) threadarg;
-    long long * pointer = my_data - > pointer;
-    int n = my_data - > num_iterations;
+    long long * pointer = my_data -> pointer;
+    int n = my_data -> num_iterations;
     for (int i = 0; i < n; i++) {
         add_c(pointer, 1);
         add_c(pointer, -1);

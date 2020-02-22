@@ -316,7 +316,7 @@ int main(int argc, char ** argv) {
     }
 
     // Print output data
-    long total_run_time = (stop.tv_sec - start.tv_sec) * 1000000000 L + (stop.tv_nsec - start.tv_nsec);
+    long total_run_time = (stop.tv_sec - start.tv_sec) * 1000000000L + (stop.tv_nsec - start.tv_nsec);
     long total_ops = num_threads * num_iterations * 3;
     long avg_time_per_op = total_run_time / total_ops;
     int num_lists = 1;

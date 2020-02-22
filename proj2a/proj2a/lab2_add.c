@@ -35,8 +35,8 @@ struct thread_data {
 void * incr_and_decr(void * threadarg) {
     struct thread_data * my_data;
     my_data = (struct thread_data * ) threadarg;
-    long long * pointer = my_data - > pointer;
-    int n = my_data - > num_iterations;
+    long long * pointer = my_data -> pointer;
+    int n = my_data -> num_iterations;
     for (int i = 0; i < n; i++) {
         add(pointer, 1);
         add(pointer, -1);
@@ -47,8 +47,8 @@ void * incr_and_decr(void * threadarg) {
 void * incr_and_decr_sync_m(void * threadarg) {
     struct thread_data * my_data;
     my_data = (struct thread_data * ) threadarg;
-    long long * pointer = my_data - > pointer;
-    int n = my_data - > num_iterations;
+    long long * pointer = my_data -> pointer;
+    int n = my_data -> num_iterations;
     for (int i = 0; i < n; i++) {
         // Get lock
         if (pthread_mutex_lock( & lock) != 0) {
@@ -79,8 +79,8 @@ void * incr_and_decr_sync_m(void * threadarg) {
 void * incr_and_decr_sync_s(void * threadarg) {
     struct thread_data * my_data;
     my_data = (struct thread_data * ) threadarg;
-    long long * pointer = my_data - > pointer;
-    int n = my_data - > num_iterations;
+    long long * pointer = my_data -> pointer;
+    int n = my_data -> num_iterations;
     for (int i = 0; i < n; i++) {
         // Get lock
         while (__sync_lock_test_and_set( & spin_lock, 1)) {
@@ -113,8 +113,8 @@ void add_c(long long * pointer, long long value) {
 void * incr_and_decr_sync_c(void * threadarg) {
     struct thread_data * my_data;
     my_data = (struct thread_data * ) threadarg;
-    long long * pointer = my_data - > pointer;
-    int n = my_data - > num_iterations;
+    long long * pointer = my_data -> pointer;
+    int n = my_data -> num_iterations;
     for (int i = 0; i < n; i++) {
         add_c(pointer, 1);
         add_c(pointer, -1);
@@ -262,7 +262,7 @@ int main(int argc, char ** argv) {
         exit(1);
     }
 
-    long total_run_time = (stop.tv_sec - start.tv_sec) * 1000000000 L + (stop.tv_nsec - start.tv_nsec);
+    long total_run_time = (stop.tv_sec - start.tv_sec) * 1000000000L + (stop.tv_nsec - start.tv_nsec);
     long total_ops = num_threads * num_iterations * 2;
     long avg_time_per_op = total_run_time / total_ops;
     if (opt_yield) {
