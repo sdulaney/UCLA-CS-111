@@ -31,13 +31,28 @@ SortedListElement_t * element_arr = NULL;
 char ** key_arr = NULL;
 SortedList_t head;
 
-void * thread_start_routine(void * elem_arr) {
-    SortedListElement_t * arr = elem_arr;
+struct thread_data {
+    SortedListElement_t * elem_arr;
+    long mutex_wait_time;
+};
+
+long calc_elapsed_time(struct timespec start, struct timespec stop) {
+    return (stop.tv_sec - start.tv_sec) * 1000000000L + (stop.tv_nsec - start.tv_nsec);
+}
+
+void * thread_start_routine(void * threadarg) {
+    struct thread_data * my_data = (struct thread_data * ) threadarg;
+    SortedListElement_t * arr = my_data->elem_arr;
+    struct timespec start, stop;
     // Insert all elements into global list
     for (int i = 0; i < num_iterations; i++) {
         if (opt_sync && arg_sync != NULL) {
             // Get lock
             if ( * arg_sync == 'm') {
+		if (clock_gettime(CLOCK_MONOTONIC, & start) == -1) {
+		    fprintf(stderr, "Error retrieving time.\nclock_gettime: %s\n", strerror(errno));
+		    exit(1);
+		}
                 if (pthread_mutex_lock( & lock) != 0) {
                     fprintf(stderr, "Error locking mutex.\n");
                     exit(1);
@@ -47,6 +62,11 @@ void * thread_start_routine(void * elem_arr) {
                     continue;
                 }
             }
+	    if (clock_gettime(CLOCK_MONOTONIC, & stop) == -1) {
+		fprintf(stderr, "Error retrieving time.\nclock_gettime: %s\n", strerror(errno));
+		exit(1);
+	    }
+	    my_data->mutex_wait_time += calc_elapsed_time(start, stop);
         }
         SortedList_insert( & head, & arr[i]);
         if (opt_sync && arg_sync != NULL) {
@@ -65,6 +85,10 @@ void * thread_start_routine(void * elem_arr) {
     if (opt_sync && arg_sync != NULL) {
         // Get lock
         if ( * arg_sync == 'm') {
+	    if (clock_gettime(CLOCK_MONOTONIC, & start) == -1) {
+		fprintf(stderr, "Error retrieving time.\nclock_gettime: %s\n", strerror(errno));
+                exit(1);
+            }
             if (pthread_mutex_lock( & lock) != 0) {
                 fprintf(stderr, "Error locking mutex.\n");
                 exit(1);
@@ -74,6 +98,11 @@ void * thread_start_routine(void * elem_arr) {
                 continue;
             }
         }
+	if (clock_gettime(CLOCK_MONOTONIC, & stop) == -1) {
+	    fprintf(stderr, "Error retrieving time.\nclock_gettime: %s\n", strerror(errno));
+            exit(1);
+        }
+        my_data->mutex_wait_time += calc_elapsed_time(start, stop);
     }
     int length = SortedList_length( & head);
     if (opt_sync && arg_sync != NULL) {
@@ -97,6 +126,10 @@ void * thread_start_routine(void * elem_arr) {
         if (opt_sync && arg_sync != NULL) {
             // Get lock
             if ( * arg_sync == 'm') {
+		if (clock_gettime(CLOCK_MONOTONIC, & start) == -1) {
+                    fprintf(stderr, "Error retrieving time.\nclock_gettime: %s\n", strerror(errno));
+                    exit(1);
+                }
                 if (pthread_mutex_lock( & lock) != 0) {
                     fprintf(stderr, "Error locking mutex.\n");
                     exit(1);
@@ -106,6 +139,11 @@ void * thread_start_routine(void * elem_arr) {
                     continue;
                 }
             }
+	    if (clock_gettime(CLOCK_MONOTONIC, & stop) == -1) {
+		fprintf(stderr, "Error retrieving time.\nclock_gettime: %s\n", strerror(errno));
+		exit(1);
+	    }
+	    my_data->mutex_wait_time += calc_elapsed_time(start, stop);
         }
         SortedListElement_t * element = SortedList_lookup( & head, arr[i].key);
         if (element == NULL) {
@@ -292,8 +330,11 @@ int main(int argc, char ** argv) {
 
     // Start the specified # of threads and wait for all to complete
     pthread_t thread_ids[num_threads];
+    struct thread_data threadarg_arr[num_threads];
     for (int i = 0; i < num_threads; i++) {
-        int error = pthread_create( & thread_ids[i], NULL, thread_start_routine, (void * )(element_arr + num_iterations * i));
+	threadarg_arr[i].elem_arr = element_arr + (num_iterations * i);
+	threadarg_arr[i].mutex_wait_time = 0;
+        int error = pthread_create( & thread_ids[i], NULL, thread_start_routine, (void * ) &threadarg_arr[i]);
         if (error != 0) {
             fprintf(stderr, "Error creating thread.\npthread_create: %s\n", strerror(error));
             exit(1);
@@ -316,9 +357,14 @@ int main(int argc, char ** argv) {
     }
 
     // Print output data
-    long total_run_time = (stop.tv_sec - start.tv_sec) * 1000000000L + (stop.tv_nsec - start.tv_nsec);
+    long total_run_time = calc_elapsed_time(start, stop);
     long total_ops = num_threads * num_iterations * 3;
     long avg_time_per_op = total_run_time / total_ops;
+    long total_mutex_wait_time = 0;
+    for (int i = 0; i < num_threads; i++)
+	total_mutex_wait_time += threadarg_arr[i].mutex_wait_time;
+    int num_lock_ops = num_threads * num_iterations * 3;
+    long avg_mutex_wait_per_lock  = total_mutex_wait_time / num_lock_ops;
     int num_lists = 1;
     char * yieldopts = NULL;
     switch (opt_yield) {
@@ -356,7 +402,7 @@ int main(int argc, char ** argv) {
         syncopts = "s";
     }
 
-    fprintf(stdout, "list-%s-%s,%d,%d,%d,%ld,%ld,%ld\n", yieldopts, syncopts, num_threads, num_iterations, num_lists, total_ops, total_run_time, avg_time_per_op);
+    fprintf(stdout, "list-%s-%s,%d,%d,%d,%ld,%ld,%ld,%ld\n", yieldopts, syncopts, num_threads, num_iterations, num_lists, total_ops, total_run_time, avg_time_per_op, avg_mutex_wait_per_lock);
 
     if (pthread_mutex_destroy( & lock) != 0) {
         fprintf(stderr, "Error destroying mutex.\n");
