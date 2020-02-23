@@ -45,7 +45,7 @@ plot \
      "< grep 'list-none-s,[0-9]*,1000,1,' lab2b_list.csv" using ($2):(1000000000/($7)) \
 	title 'spin locks' with linespoints lc rgb 'green'
 
-set title "List-2: Average Wait-for-lock and Average Time per Operation vs Threads"
+set title "List-2: Mean time per mutex wait and Mean time per operation vs Threads"
 set xlabel "Threads"
 set logscale x 2
 set ylabel "Time (ns)"
@@ -54,6 +54,23 @@ set output 'lab2b_2.png'
 
 plot \
      "< grep 'list-none-m,[0-9]*,1000,1,' lab2b_list.csv" using ($2):($8) \
-        title 'Average Wait-for-lock' with linespoints lc rgb 'red', \
+        title 'Mean time per mutex wait' with linespoints lc rgb 'red', \
      "< grep 'list-none-s,[0-9]*,1000,1,' lab2b_list.csv" using ($2):($7) \
-        title 'Average Time per Operation' with linespoints lc rgb 'green'
+        title 'Mean time per operation' with linespoints lc rgb 'green'
+
+set title "List-3: Successful iterations vs. threads for each synchronization method"
+set xlabel "Threads"
+set logscale x 2
+set xrange [0.75:]
+set ylabel "Successful Iterations"
+set logscale y 10
+set output 'lab2b_3.png'
+# note that unsuccessful runs should have produced no output
+plot \
+     "< grep list-id-m lab2b_list.csv" using ($2):($3) \
+        title 'mutex' with points lc rgb 'orange', \
+     "< grep list-id-s lab2b_list.csv" using ($2):($3) \
+        title 'spin lock' with points lc rgb 'blue', \
+     "< grep list-id-none lab2b_list.csv" using ($2):($3) \
+        title 'unprotected' with points lc rgb 'violet'
+

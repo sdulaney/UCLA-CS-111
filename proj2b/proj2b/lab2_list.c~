@@ -375,13 +375,15 @@ int main(int argc, char ** argv) {
     // Create and initialize the required # of list elements, locks, and linked list heads
     init(num_threads * num_iterations);
 
-    for (int i = 0; i < num_lists; i++) {
-        if (pthread_mutex_init( & lock_arr[i], NULL) != 0) {
-            fprintf(stderr, "Error initializing mutex.\n");
-            exit(1);
-        }
+    if (opt_sync && arg_sync != NULL && * arg_sync == 'm') {
+	for (int i = 0; i < num_lists; i++) {
+	    if (pthread_mutex_init( & lock_arr[i], NULL) != 0) {
+		fprintf(stderr, "Error initializing mutex.\n");
+		exit(1);
+	    }
+	}
     }
-
+    
     // Note start time
     if (clock_gettime(CLOCK_MONOTONIC, & start) == -1) {
         fprintf(stderr, "Error retrieving time.\nclock_gettime: %s\n", strerror(errno));
@@ -465,9 +467,13 @@ int main(int argc, char ** argv) {
 
     fprintf(stdout, "list-%s-%s,%d,%d,%d,%ld,%ld,%ld,%ld\n", yieldopts, syncopts, num_threads, num_iterations, num_lists, total_ops, total_run_time, avg_time_per_op, avg_mutex_wait_per_lock);
 
-    if (pthread_mutex_destroy( & lock) != 0) {
-        fprintf(stderr, "Error destroying mutex.\n");
-        exit(1);
+    if (opt_sync && arg_sync != NULL && * arg_sync == 'm') {
+	for (int i = 0; i < num_lists; i++) {
+	    if (pthread_mutex_destroy( & lock_arr[i]) != 0) {
+		fprintf(stderr, "Error destroying mutex.\n");
+		exit(1);
+	    }
+	}
     }
 
     exit(0);

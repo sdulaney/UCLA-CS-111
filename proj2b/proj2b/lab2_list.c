@@ -101,7 +101,7 @@ void * thread_start_routine(void * threadarg) {
 	    }
         } else if ( * arg_sync == 's') {
 	    for (int i = 0; i < num_lists; i++) {
-		while (__sync_lock_test_and_set( & spin_lock_arr[list_index], 1)) {
+		while (__sync_lock_test_and_set( & spin_lock_arr[i], 1)) {
 		    continue;
 		}
 	    }
@@ -127,7 +127,7 @@ void * thread_start_routine(void * threadarg) {
 	    }
         } else if ( * arg_sync == 's') {
 	    for (int i = 0; i < num_lists; i++) {
-		__sync_lock_release( & spin_lock_arr[list_index]);
+		__sync_lock_release( & spin_lock_arr[i]);
 	    }
         }
     }
