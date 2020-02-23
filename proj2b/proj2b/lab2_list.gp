@@ -57,3 +57,4 @@ plot \
         title 'Average Wait-for-lock' with linespoints lc rgb 'red', \
      "< grep 'list-none-s,[0-9]*,1000,1,' lab2b_list.csv" using ($2):($7) \
         title 'Average Time per Operation' with linespoints lc rgb 'green'
+
