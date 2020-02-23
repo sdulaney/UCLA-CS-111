@@ -83,3 +83,45 @@
 ./lab2_list --lists=4 --iterations=20 --threads=16 --yield=id --sync=s
 ./lab2_list --lists=4 --iterations=40 --threads=16 --yield=id --sync=s
 ./lab2_list --lists=4 --iterations=80 --threads=16 --yield=id --sync=s
+# lab2b_4.png
+#./lab2_list --sync=m --iterations=1000 --threads=1 --lists=1
+#./lab2_list --sync=m --iterations=1000 --threads=2 --lists=1
+#./lab2_list --sync=m --iterations=1000 --threads=4 --lists=1
+#./lab2_list --sync=m --iterations=1000 --threads=8 --lists=1
+#./lab2_list --sync=m --iterations=1000 --threads=12 --lists=1
+./lab2_list --sync=m --iterations=1000 --threads=1 --lists=4
+./lab2_list --sync=m --iterations=1000 --threads=2 --lists=4
+./lab2_list --sync=m --iterations=1000 --threads=4 --lists=4
+./lab2_list --sync=m --iterations=1000 --threads=8 --lists=4
+./lab2_list --sync=m --iterations=1000 --threads=12 --lists=4
+./lab2_list --sync=m --iterations=1000 --threads=1 --lists=8
+./lab2_list --sync=m --iterations=1000 --threads=2 --lists=8
+./lab2_list --sync=m --iterations=1000 --threads=4 --lists=8
+./lab2_list --sync=m --iterations=1000 --threads=8 --lists=8
+./lab2_list --sync=m --iterations=1000 --threads=12 --lists=8
+./lab2_list --sync=m --iterations=1000 --threads=1 --lists=16
+./lab2_list --sync=m --iterations=1000 --threads=2 --lists=16
+./lab2_list --sync=m --iterations=1000 --threads=4 --lists=16
+./lab2_list --sync=m --iterations=1000 --threads=8 --lists=16
+./lab2_list --sync=m --iterations=1000 --threads=12 --lists=16
+# lab2b_5.png
+#./lab2_list --sync=s --iterations=1000 --threads=1 --lists=1
+#./lab2_list --sync=s --iterations=1000 --threads=2 --lists=1
+#./lab2_list --sync=s --iterations=1000 --threads=4 --lists=1
+#./lab2_list --sync=s --iterations=1000 --threads=8 --lists=1
+#./lab2_list --sync=s --iterations=1000 --threads=12 --lists=1
+./lab2_list --sync=s --iterations=1000 --threads=1 --lists=4
+./lab2_list --sync=s --iterations=1000 --threads=2 --lists=4
+./lab2_list --sync=s --iterations=1000 --threads=4 --lists=4
+./lab2_list --sync=s --iterations=1000 --threads=8 --lists=4
+./lab2_list --sync=s --iterations=1000 --threads=12 --lists=4
+./lab2_list --sync=s --iterations=1000 --threads=1 --lists=8
+./lab2_list --sync=s --iterations=1000 --threads=2 --lists=8
+./lab2_list --sync=s --iterations=1000 --threads=4 --lists=8
+./lab2_list --sync=s --iterations=1000 --threads=8 --lists=8
+./lab2_list --sync=s --iterations=1000 --threads=12 --lists=8
+./lab2_list --sync=s --iterations=1000 --threads=1 --lists=16
+./lab2_list --sync=s --iterations=1000 --threads=2 --lists=16
+./lab2_list --sync=s --iterations=1000 --threads=4 --lists=16
+./lab2_list --sync=s --iterations=1000 --threads=8 --lists=16
+./lab2_list --sync=s --iterations=1000 --threads=12 --lists=16
