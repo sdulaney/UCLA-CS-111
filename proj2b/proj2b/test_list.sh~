@@ -105,11 +105,11 @@
 ./lab2_list --sync=m --iterations=1000 --threads=8 --lists=16
 ./lab2_list --sync=m --iterations=1000 --threads=12 --lists=16
 # lab2b_5.png
-./lab2_list --sync=s --iterations=1000 --threads=1 --lists=1
-./lab2_list --sync=s --iterations=1000 --threads=2 --lists=1
-./lab2_list --sync=s --iterations=1000 --threads=4 --lists=1
-./lab2_list --sync=s --iterations=1000 --threads=8 --lists=1
-./lab2_list --sync=s --iterations=1000 --threads=12 --lists=1
+#./lab2_list --sync=s --iterations=1000 --threads=1 --lists=1
+#./lab2_list --sync=s --iterations=1000 --threads=2 --lists=1
+#./lab2_list --sync=s --iterations=1000 --threads=4 --lists=1
+#./lab2_list --sync=s --iterations=1000 --threads=8 --lists=1
+#./lab2_list --sync=s --iterations=1000 --threads=12 --lists=1
 ./lab2_list --sync=s --iterations=1000 --threads=1 --lists=4
 ./lab2_list --sync=s --iterations=1000 --threads=2 --lists=4
 ./lab2_list --sync=s --iterations=1000 --threads=4 --lists=4

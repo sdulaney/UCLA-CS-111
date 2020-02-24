@@ -1,5 +1,9 @@
 #! /usr/bin/gnuplot
 #
+# NAME: Stewart Dulaney
+# EMAIL: sdulaney@ucla.edu
+# ID: 904-064-791
+#
 # purpose:
 #	 generate data reduction graphs for the multi-threaded list project
 #
@@ -11,6 +15,7 @@
 #	5. # operations performed (threads x iterations x (ins + lookup + delete))
 #	6. run time (ns)
 #	7. run time per operation (ns)
+#       8. average wait-for-lock (ns)
 #
 # output:
 #	lab2b_1.png ... throughput vs. number of threads for mutex and spin-lock synchronized list operations
@@ -90,3 +95,20 @@ plot \
         title '--lists=8' with linespoints lc rgb 'green', \
      "< grep 'list-none-m,[0-9]*,1000,16,' lab2b_list.csv" using ($2):(1000000000/($7)) \
 	title '--lists=16' with linespoints lc rgb 'violet'
+
+set title "List-5: Spin Lock Throughput vs Threads"
+set xlabel "Threads"
+set logscale x 2
+set ylabel "Total # of Operations per second"
+set logscale y 10
+set output 'lab2b_5.png'
+
+plot \
+     "< grep 'list-none-s,[0-9]*,1000,1,' lab2b_list.csv" using ($2):(1000000000/($7)) \
+        title '--lists=1' with linespoints lc rgb 'red', \
+     "< grep 'list-none-s,[0-9]*,1000,4,' lab2b_list.csv" using ($2):(1000000000/($7)) \
+        title '--lists=4' with linespoints lc rgb 'blue', \
+     "< grep 'list-none-s,[0-9]*,1000,8,' lab2b_list.csv" using ($2):(1000000000/($7)) \
+        title '--lists=8' with linespoints lc rgb 'green', \
+     "< grep 'list-none-s,[0-9]*,1000,16,' lab2b_list.csv" using ($2):(1000000000/($7)) \
+        title '--lists=16' with linespoints lc rgb 'violet'

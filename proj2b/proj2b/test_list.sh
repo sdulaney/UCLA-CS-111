@@ -1,3 +1,7 @@
+# NAME: Stewart Dulaney
+# EMAIL: sdulaney@ucla.edu
+# ID: 904-064-791
+#
 #!/bin/sh
 
 # lab2b_1.png, lab2b_2.png

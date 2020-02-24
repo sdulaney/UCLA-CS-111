@@ -1,20 +1,25 @@
-Total: 176 samples
-     165  93.8%  93.8%      175  99.4% thread_start_routine
-       3   1.7%  95.5%        3   1.7% ?? /usr/src/debug////////glibc-2.17-c758a686/string/../sysdeps/x86_64/multiarch/strcmp-sse42.S:1720
-       3   1.7%  97.2%       10   5.7% SortedList_lookup
-       1   0.6%  97.7%        1   0.6% ?? /usr/src/debug////////glibc-2.17-c758a686/string/../sysdeps/x86_64/multiarch/strcmp-sse42.S:134
-       1   0.6%  98.3%        1   0.6% ?? /usr/src/debug////////glibc-2.17-c758a686/string/../sysdeps/x86_64/multiarch/strcmp-sse42.S:165
-       1   0.6%  98.9%        1   0.6% ?? /usr/src/debug////////glibc-2.17-c758a686/string/../sysdeps/x86_64/multiarch/strcmp-sse42.S:1721
-       1   0.6%  99.4%        1   0.6% ?? /usr/src/debug////////glibc-2.17-c758a686/string/../sysdeps/x86_64/multiarch/strcmp-sse42.S:1729
-       1   0.6% 100.0%        1   0.6% rand
-       0   0.0% 100.0%      175  99.4% ?? /usr/src/debug////////glibc-2.17-c758a686/misc/../sysdeps/unix/sysv/linux/x86_64/clone.S:111
-       0   0.0% 100.0%        1   0.6% __libc_start_main
-       0   0.0% 100.0%        1   0.6% _start
-       0   0.0% 100.0%        1   0.6% init
-       0   0.0% 100.0%        1   0.6% main
-       0   0.0% 100.0%      175  99.4% start_thread
+Total: 201 samples
+     179  89.1%  89.1%      200  99.5% thread_start_routine
+       7   3.5%  92.5%       21  10.4% SortedList_lookup
+       3   1.5%  94.0%        3   1.5% ?? /usr/src/debug////////glibc-2.17-c758a686/string/../sysdeps/x86_64/multiarch/strcmp-sse42.S:1721
+       2   1.0%  95.0%        2   1.0% ?? /usr/src/debug////////glibc-2.17-c758a686/string/../sysdeps/x86_64/multiarch/strcmp-sse42.S:1720
+       2   1.0%  96.0%        2   1.0% ?? /usr/src/debug////////glibc-2.17-c758a686/string/../sysdeps/x86_64/multiarch/strcmp-sse42.S:1729
+       2   1.0%  97.0%        2   1.0% ?? /usr/src/debug////////glibc-2.17-c758a686/string/../sysdeps/x86_64/multiarch/strcmp-sse42.S:1730
+       1   0.5%  97.5%        1   0.5% ?? /usr/src/debug////////glibc-2.17-c758a686/string/../sysdeps/x86_64/multiarch/strcmp-sse42.S:130
+       1   0.5%  98.0%        1   0.5% ?? /usr/src/debug////////glibc-2.17-c758a686/string/../sysdeps/x86_64/multiarch/strcmp-sse42.S:165
+       1   0.5%  98.5%        1   0.5% ?? /usr/src/debug////////glibc-2.17-c758a686/string/../sysdeps/x86_64/multiarch/strcmp-sse42.S:202
+       1   0.5%  99.0%        1   0.5% ?? /usr/src/debug////////glibc-2.17-c758a686/string/../sysdeps/x86_64/multiarch/strcmp-sse42.S:203
+       1   0.5%  99.5%        1   0.5% ?? /usr/src/debug////////glibc-2.17-c758a686/string/../sysdeps/x86_64/multiarch/strcmp-sse42.S:205
+       1   0.5% 100.0%        1   0.5% __random
+       0   0.0% 100.0%      200  99.5% ?? /usr/src/debug////////glibc-2.17-c758a686/misc/../sysdeps/unix/sysv/linux/x86_64/clone.S:111
+       0   0.0% 100.0%        1   0.5% __libc_start_main
+       0   0.0% 100.0%        1   0.5% _start
+       0   0.0% 100.0%        1   0.5% init
+       0   0.0% 100.0%        1   0.5% main
+       0   0.0% 100.0%        1   0.5% rand
+       0   0.0% 100.0%      200  99.5% start_thread
 ROUTINE ====================== thread_start_routine in /u/cs/ugrad/stewart/111/proj2b/lab2_list.c
-   165    175 Total samples (flat / cumulative)
+   179    200 Total samples (flat / cumulative)
      .      .   39: 
      .      .   40: long calc_elapsed_time(struct timespec start, struct timespec stop) {
      .      .   41:     return (stop.tv_sec - start.tv_sec) * 1000000000L + (stop.tv_nsec - start.tv_nsec);
@@ -42,7 +47,7 @@ ROUTINE ====================== thread_start_routine in /u/cs/ugrad/stewart/111/p
      .      .   62:                     exit(1);
      .      .   63:                 }
      .      .   64:             } else if ( * arg_sync == 's') {
-   156    156   65:                 while (__sync_lock_test_and_set( & spin_lock_arr[list_index], 1)) {
+   135    135   65:                 while (__sync_lock_test_and_set( & spin_lock_arr[list_index], 1)) {
      .      .   66:                     continue;
      .      .   67:                 }
      .      .   68:             }
@@ -50,7 +55,7 @@ ROUTINE ====================== thread_start_routine in /u/cs/ugrad/stewart/111/p
      .      .   70: 		fprintf(stderr, "Error retrieving time.\nclock_gettime: %s\n", strerror(errno));
      .      .   71: 		exit(1);
      .      .   72: 	    }
-     .      .   73: 	    my_data->mutex_wait_time += calc_elapsed_time(start, stop);
+     1      1   73: 	    my_data->mutex_wait_time += calc_elapsed_time(start, stop);
      .      .   74:         }
      .      .   75:         SortedList_insert( & list_arr[list_index], & arr[i]);
      .      .   76:         if (opt_sync && arg_sync != NULL) {
@@ -131,7 +136,7 @@ ROUTINE ====================== thread_start_routine in /u/cs/ugrad/stewart/111/p
      .      .  151:                     exit(1);
      .      .  152:                 }
      .      .  153:             } else if ( * arg_sync == 's') {
-     9      9  154:                 while (__sync_lock_test_and_set( & spin_lock_arr[list_index], 1)) {
+    43     43  154:                 while (__sync_lock_test_and_set( & spin_lock_arr[list_index], 1)) {
      .      .  155:                     continue;
      .      .  156:                 }
      .      .  157:             }
@@ -141,7 +146,7 @@ ROUTINE ====================== thread_start_routine in /u/cs/ugrad/stewart/111/p
      .      .  161: 	    }
      .      .  162: 	    my_data->mutex_wait_time += calc_elapsed_time(start, stop);
      .      .  163:         }
-     .     10  164:         SortedListElement_t * element = SortedList_lookup( & list_arr[list_index], arr[i].key);
+     .     21  164:         SortedListElement_t * element = SortedList_lookup( & list_arr[list_index], arr[i].key);
      .      .  165:         if (element == NULL) {
      .      .  166:             fprintf(stderr, "Error looking up element.\n");
      .      .  167:             exit(2);
@@ -171,7 +176,7 @@ ROUTINE ====================== thread_start_routine in /u/cs/ugrad/stewart/111/p
      .      .  190:     element_arr = malloc(sizeof(SortedListElement_t) * num_elements);
      .      .  191:     if (element_arr == NULL) {
 ROUTINE ====================== thread_start_routine in /u/cs/ugrad/stewart/111/proj2b/lab2_list.c
-   165    175 Total samples (flat / cumulative)
+   179    200 Total samples (flat / cumulative)
      .      .   39: 
      .      .   40: long calc_elapsed_time(struct timespec start, struct timespec stop) {
      .      .   41:     return (stop.tv_sec - start.tv_sec) * 1000000000L + (stop.tv_nsec - start.tv_nsec);
@@ -199,7 +204,7 @@ ROUTINE ====================== thread_start_routine in /u/cs/ugrad/stewart/111/p
      .      .   62:                     exit(1);
      .      .   63:                 }
      .      .   64:             } else if ( * arg_sync == 's') {
-   156    156   65:                 while (__sync_lock_test_and_set( & spin_lock_arr[list_index], 1)) {
+   135    135   65:                 while (__sync_lock_test_and_set( & spin_lock_arr[list_index], 1)) {
      .      .   66:                     continue;
      .      .   67:                 }
      .      .   68:             }
@@ -207,7 +212,7 @@ ROUTINE ====================== thread_start_routine in /u/cs/ugrad/stewart/111/p
      .      .   70: 		fprintf(stderr, "Error retrieving time.\nclock_gettime: %s\n", strerror(errno));
      .      .   71: 		exit(1);
      .      .   72: 	    }
-     .      .   73: 	    my_data->mutex_wait_time += calc_elapsed_time(start, stop);
+     1      1   73: 	    my_data->mutex_wait_time += calc_elapsed_time(start, stop);
      .      .   74:         }
      .      .   75:         SortedList_insert( & list_arr[list_index], & arr[i]);
      .      .   76:         if (opt_sync && arg_sync != NULL) {
@@ -288,7 +293,7 @@ ROUTINE ====================== thread_start_routine in /u/cs/ugrad/stewart/111/p
      .      .  151:                     exit(1);
      .      .  152:                 }
      .      .  153:             } else if ( * arg_sync == 's') {
-     9      9  154:                 while (__sync_lock_test_and_set( & spin_lock_arr[list_index], 1)) {
+    43     43  154:                 while (__sync_lock_test_and_set( & spin_lock_arr[list_index], 1)) {
      .      .  155:                     continue;
      .      .  156:                 }
      .      .  157:             }
@@ -298,7 +303,7 @@ ROUTINE ====================== thread_start_routine in /u/cs/ugrad/stewart/111/p
      .      .  161: 	    }
      .      .  162: 	    my_data->mutex_wait_time += calc_elapsed_time(start, stop);
      .      .  163:         }
-     .     10  164:         SortedListElement_t * element = SortedList_lookup( & list_arr[list_index], arr[i].key);
+     .     21  164:         SortedListElement_t * element = SortedList_lookup( & list_arr[list_index], arr[i].key);
      .      .  165:         if (element == NULL) {
      .      .  166:             fprintf(stderr, "Error looking up element.\n");
      .      .  167:             exit(2);

@@ -279,7 +279,7 @@ int main(int argc, char ** argv) {
             },
             {
                 "yield",
-                optional_argument,
+                required_argument,
                 0,
                 0
             },
@@ -303,7 +303,7 @@ int main(int argc, char ** argv) {
             }
         };
 
-        c = getopt_long(argc, argv, "t::i::y::s:l:",
+        c = getopt_long(argc, argv, "t::i::y:s:l:",
             long_options, & option_index);
         if (c == -1)
             break;
@@ -391,6 +391,8 @@ int main(int argc, char ** argv) {
     }
 
     // Start the specified # of threads and wait for all to complete
+
+    // Leverage variable length arrays for thread_ids, threadarg_arr (since C99)
     pthread_t thread_ids[num_threads];
     struct thread_data threadarg_arr[num_threads];
     for (int i = 0; i < num_threads; i++) {
@@ -475,6 +477,8 @@ int main(int argc, char ** argv) {
 	    }
 	}
     }
+
+    // No need to explicitly free dynamically allocated data structures b/c we need them for the vast majority of the program (while the threads execute)
 
     exit(0);
 }
