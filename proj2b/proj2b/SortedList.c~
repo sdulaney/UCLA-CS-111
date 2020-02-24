@@ -90,7 +90,7 @@ int SortedList_length(SortedList_t *list) {
     SortedList_t* curr = list->next;
     // List size is 0
     if (curr == NULL) {
-	return 0;
+	return 1;
     }
     int length = 0;
     while (curr != list) {

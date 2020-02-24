@@ -52,11 +52,11 @@ void * thread_start_routine(void * threadarg) {
 	list_index = arr[i].key[0] % num_lists;
         if (opt_sync && arg_sync != NULL) {
             // Get lock
+	    if (clock_gettime(CLOCK_MONOTONIC, & start) == -1) {
+		fprintf(stderr, "Error retrieving time.\nclock_gettime: %s\n", strerror(errno));
+                exit(1);
+            }
             if ( * arg_sync == 'm') {
-		if (clock_gettime(CLOCK_MONOTONIC, & start) == -1) {
-		    fprintf(stderr, "Error retrieving time.\nclock_gettime: %s\n", strerror(errno));
-		    exit(1);
-		}
                 if (pthread_mutex_lock( & lock_arr[list_index]) != 0) {
                     fprintf(stderr, "Error locking mutex.\n");
                     exit(1);
@@ -88,11 +88,11 @@ void * thread_start_routine(void * threadarg) {
     // Check list length
     if (opt_sync && arg_sync != NULL) {
         // Get lock
+	if (clock_gettime(CLOCK_MONOTONIC, & start) == -1) {
+	    fprintf(stderr, "Error retrieving time.\nclock_gettime: %s\n", strerror(errno));
+            exit(1);
+        }
         if ( * arg_sync == 'm') {
-	    if (clock_gettime(CLOCK_MONOTONIC, & start) == -1) {
-		fprintf(stderr, "Error retrieving time.\nclock_gettime: %s\n", strerror(errno));
-                exit(1);
-            }
 	    for (int i = 0; i < num_lists; i++) {
 		if (pthread_mutex_lock( & lock_arr[i]) != 0) {
 		    fprintf(stderr, "Error locking mutex.\n");
@@ -141,11 +141,11 @@ void * thread_start_routine(void * threadarg) {
 	list_index = arr[i].key[0] % num_lists;
         if (opt_sync && arg_sync != NULL) {
             // Get lock
+	    if (clock_gettime(CLOCK_MONOTONIC, & start) == -1) {
+		fprintf(stderr, "Error retrieving time.\nclock_gettime: %s\n", strerror(errno));
+                exit(1);
+            }
             if ( * arg_sync == 'm') {
-		if (clock_gettime(CLOCK_MONOTONIC, & start) == -1) {
-                    fprintf(stderr, "Error retrieving time.\nclock_gettime: %s\n", strerror(errno));
-                    exit(1);
-                }
                 if (pthread_mutex_lock( & lock_arr[list_index]) != 0) {
                     fprintf(stderr, "Error locking mutex.\n");
                     exit(1);

@@ -10,8 +10,7 @@ ARCHIVE = lab$(LAB)-$(ID).tar.gz
 OUTPUT = lab2b_list.csv profile.out
 GRAPHS = lab2b_1.png lab2b_2.png lab2b_3.png lab2b_4.png lab2b_5.png
 SCRIPTS = lab2_list.gp test_list.sh
-# sources = lab2_list.c SortedList.c SortedList.h Makefile README $(OUTPUT) $(GRAPHS) $(SCRIPTS)
-sources = lab2_list.c SortedList.c SortedList.h Makefile README $(SCRIPTS) $(OUTPUT)
+sources = lab2_list.c SortedList.c SortedList.h Makefile README $(OUTPUT) $(GRAPHS) $(SCRIPTS)
 
 build: lab2_list
 
@@ -37,6 +36,5 @@ dist: clean graphs profile
 clean:
 	-rm lab2_list
 	-rm profileInfo.prof
-	-rm profile.out
 	-rm lab$(LAB)-904-064-791.tar.gz
 

@@ -1,298 +1,329 @@
-Total: 2566 samples
-    2536  98.8%  98.8%     2565 100.0% thread_start_routine
-      23   0.9%  99.7%       28   1.1% SortedList_lookup
-       2   0.1%  99.8%        2   0.1% ?? /usr/src/debug////////glibc-2.17-c758a686/string/../sysdeps/x86_64/multiarch/strcmp-sse42.S:1730
-       1   0.0%  99.8%        1   0.0% ?? /usr/src/debug////////glibc-2.17-c758a686/string/../sysdeps/x86_64/multiarch/strcmp-sse42.S:134
-       1   0.0%  99.9%        1   0.0% ?? /usr/src/debug////////glibc-2.17-c758a686/string/../sysdeps/x86_64/multiarch/strcmp-sse42.S:202
-       1   0.0%  99.9%        1   0.0% ?? /usr/src/debug////////glibc-2.17-c758a686/string/../sysdeps/x86_64/multiarch/strcmp-sse42.S:1721
-       1   0.0% 100.0%        1   0.0% SortedList_insert
-       1   0.0% 100.0%        1   0.0% init_list_elements
-       0   0.0% 100.0%     2565 100.0% ?? /usr/src/debug////////glibc-2.17-c758a686/misc/../sysdeps/unix/sysv/linux/x86_64/clone.S:111
-       0   0.0% 100.0%        1   0.0% __libc_start_main
-       0   0.0% 100.0%        1   0.0% _start
-       0   0.0% 100.0%        1   0.0% main
-       0   0.0% 100.0%     2565 100.0% start_thread
+Total: 176 samples
+     165  93.8%  93.8%      175  99.4% thread_start_routine
+       3   1.7%  95.5%        3   1.7% ?? /usr/src/debug////////glibc-2.17-c758a686/string/../sysdeps/x86_64/multiarch/strcmp-sse42.S:1720
+       3   1.7%  97.2%       10   5.7% SortedList_lookup
+       1   0.6%  97.7%        1   0.6% ?? /usr/src/debug////////glibc-2.17-c758a686/string/../sysdeps/x86_64/multiarch/strcmp-sse42.S:134
+       1   0.6%  98.3%        1   0.6% ?? /usr/src/debug////////glibc-2.17-c758a686/string/../sysdeps/x86_64/multiarch/strcmp-sse42.S:165
+       1   0.6%  98.9%        1   0.6% ?? /usr/src/debug////////glibc-2.17-c758a686/string/../sysdeps/x86_64/multiarch/strcmp-sse42.S:1721
+       1   0.6%  99.4%        1   0.6% ?? /usr/src/debug////////glibc-2.17-c758a686/string/../sysdeps/x86_64/multiarch/strcmp-sse42.S:1729
+       1   0.6% 100.0%        1   0.6% rand
+       0   0.0% 100.0%      175  99.4% ?? /usr/src/debug////////glibc-2.17-c758a686/misc/../sysdeps/unix/sysv/linux/x86_64/clone.S:111
+       0   0.0% 100.0%        1   0.6% __libc_start_main
+       0   0.0% 100.0%        1   0.6% _start
+       0   0.0% 100.0%        1   0.6% init
+       0   0.0% 100.0%        1   0.6% main
+       0   0.0% 100.0%      175  99.4% start_thread
 ROUTINE ====================== thread_start_routine in /u/cs/ugrad/stewart/111/proj2b/lab2_list.c
-  2536   2565 Total samples (flat / cumulative)
-     .      .   38: 
-     .      .   39: long calc_elapsed_time(struct timespec start, struct timespec stop) {
-     .      .   40:     return (stop.tv_sec - start.tv_sec) * 1000000000L + (stop.tv_nsec - start.tv_nsec);
-     .      .   41: }
-     .      .   42: 
+   165    175 Total samples (flat / cumulative)
+     .      .   39: 
+     .      .   40: long calc_elapsed_time(struct timespec start, struct timespec stop) {
+     .      .   41:     return (stop.tv_sec - start.tv_sec) * 1000000000L + (stop.tv_nsec - start.tv_nsec);
+     .      .   42: }
+     .      .   43: 
 ---
-     .      .   43: void * thread_start_routine(void * threadarg) {
-     .      .   44:     struct thread_data * my_data = (struct thread_data * ) threadarg;
-     .      .   45:     SortedListElement_t * arr = my_data->elem_arr;
-     .      .   46:     struct timespec start, stop;
-     .      .   47:     // Insert all elements into global list
-     .      .   48:     for (int i = 0; i < num_iterations; i++) {
-     .      .   49:         if (opt_sync && arg_sync != NULL) {
-     .      .   50:             // Get lock
-     .      .   51:             if ( * arg_sync == 'm') {
-     .      .   52: 		if (clock_gettime(CLOCK_MONOTONIC, & start) == -1) {
-     .      .   53: 		    fprintf(stderr, "Error retrieving time.\nclock_gettime: %s\n", strerror(errno));
-     .      .   54: 		    exit(1);
-     .      .   55: 		}
-     .      .   56:                 if (pthread_mutex_lock( & lock) != 0) {
-     .      .   57:                     fprintf(stderr, "Error locking mutex.\n");
-     .      .   58:                     exit(1);
-     .      .   59:                 }
-     .      .   60:             } else if ( * arg_sync == 's') {
-  1643   1643   61:                 while (__sync_lock_test_and_set( & spin_lock, 1)) {
-     6      6   62:                     continue;
+     .      .   44: void * thread_start_routine(void * threadarg) {
+     .      .   45:     struct thread_data * my_data = (struct thread_data * ) threadarg;
+     .      .   46:     SortedListElement_t * arr = my_data->elem_arr;
+     .      .   47:     struct timespec start, stop;
+     .      .   48:     // Use simple modulo operation on first char of key as hash for index into list_arr and lock_arr
+     .      .   49:     int list_index = 0;
+     .      .   50:     // Insert all elements into list based on hash of key
+     .      .   51:     for (int i = 0; i < num_iterations; i++) {
+     .      .   52: 	list_index = arr[i].key[0] % num_lists;
+     .      .   53:         if (opt_sync && arg_sync != NULL) {
+     .      .   54:             // Get lock
+     .      .   55: 	    if (clock_gettime(CLOCK_MONOTONIC, & start) == -1) {
+     .      .   56: 		fprintf(stderr, "Error retrieving time.\nclock_gettime: %s\n", strerror(errno));
+     .      .   57:                 exit(1);
+     .      .   58:             }
+     .      .   59:             if ( * arg_sync == 'm') {
+     .      .   60:                 if (pthread_mutex_lock( & lock_arr[list_index]) != 0) {
+     .      .   61:                     fprintf(stderr, "Error locking mutex.\n");
+     .      .   62:                     exit(1);
      .      .   63:                 }
-     .      .   64:             }
-     .      .   65: 	    if (clock_gettime(CLOCK_MONOTONIC, & stop) == -1) {
-     .      .   66: 		fprintf(stderr, "Error retrieving time.\nclock_gettime: %s\n", strerror(errno));
-     .      .   67: 		exit(1);
-     .      .   68: 	    }
-     .      .   69: 	    my_data->mutex_wait_time += calc_elapsed_time(start, stop);
-     .      .   70:         }
-     .      1   71:         SortedList_insert( & head, & arr[i]);
-     .      .   72:         if (opt_sync && arg_sync != NULL) {
-     .      .   73:             // Release lock
-     .      .   74:             if ( * arg_sync == 'm') {
-     .      .   75:                 if (pthread_mutex_unlock( & lock) != 0) {
-     .      .   76:                     fprintf(stderr, "Error unlocking mutex.\n");
-     .      .   77:                     exit(1);
-     .      .   78:                 }
-     .      .   79:             } else if ( * arg_sync == 's') {
-     .      .   80:                 __sync_lock_release( & spin_lock);
-     .      .   81:             }
-     .      .   82:         }
-     .      .   83:     }
-     .      .   84:     // Check list length
-     .      .   85:     if (opt_sync && arg_sync != NULL) {
-     .      .   86:         // Get lock
-     .      .   87:         if ( * arg_sync == 'm') {
-     .      .   88: 	    if (clock_gettime(CLOCK_MONOTONIC, & start) == -1) {
-     .      .   89: 		fprintf(stderr, "Error retrieving time.\nclock_gettime: %s\n", strerror(errno));
-     .      .   90:                 exit(1);
-     .      .   91:             }
-     .      .   92:             if (pthread_mutex_lock( & lock) != 0) {
-     .      .   93:                 fprintf(stderr, "Error locking mutex.\n");
-     .      .   94:                 exit(1);
-     .      .   95:             }
-     .      .   96:         } else if ( * arg_sync == 's') {
-     8      8   97:             while (__sync_lock_test_and_set( & spin_lock, 1)) {
-     .      .   98:                 continue;
-     .      .   99:             }
-     .      .  100:         }
-     .      .  101: 	if (clock_gettime(CLOCK_MONOTONIC, & stop) == -1) {
-     .      .  102: 	    fprintf(stderr, "Error retrieving time.\nclock_gettime: %s\n", strerror(errno));
-     .      .  103:             exit(1);
-     .      .  104:         }
-     .      .  105:         my_data->mutex_wait_time += calc_elapsed_time(start, stop);
-     .      .  106:     }
-     .      .  107:     int length = SortedList_length( & head);
-     .      .  108:     if (opt_sync && arg_sync != NULL) {
-     .      .  109:         // Release lock
-     .      .  110:         if ( * arg_sync == 'm') {
-     .      .  111:             if (pthread_mutex_unlock( & lock) != 0) {
-     .      .  112:                 fprintf(stderr, "Error unlocking mutex.\n");
-     .      .  113:                 exit(1);
-     .      .  114:             }
-     .      .  115:         } else if ( * arg_sync == 's') {
-     .      .  116:             __sync_lock_release( & spin_lock);
-     .      .  117:         }
+     .      .   64:             } else if ( * arg_sync == 's') {
+   156    156   65:                 while (__sync_lock_test_and_set( & spin_lock_arr[list_index], 1)) {
+     .      .   66:                     continue;
+     .      .   67:                 }
+     .      .   68:             }
+     .      .   69: 	    if (clock_gettime(CLOCK_MONOTONIC, & stop) == -1) {
+     .      .   70: 		fprintf(stderr, "Error retrieving time.\nclock_gettime: %s\n", strerror(errno));
+     .      .   71: 		exit(1);
+     .      .   72: 	    }
+     .      .   73: 	    my_data->mutex_wait_time += calc_elapsed_time(start, stop);
+     .      .   74:         }
+     .      .   75:         SortedList_insert( & list_arr[list_index], & arr[i]);
+     .      .   76:         if (opt_sync && arg_sync != NULL) {
+     .      .   77:             // Release lock
+     .      .   78:             if ( * arg_sync == 'm') {
+     .      .   79:                 if (pthread_mutex_unlock( & lock_arr[list_index]) != 0) {
+     .      .   80:                     fprintf(stderr, "Error unlocking mutex.\n");
+     .      .   81:                     exit(1);
+     .      .   82:                 }
+     .      .   83:             } else if ( * arg_sync == 's') {
+     .      .   84:                 __sync_lock_release( & spin_lock_arr[list_index]);
+     .      .   85:             }
+     .      .   86:         }
+     .      .   87:     }
+     .      .   88:     // Check list length
+     .      .   89:     if (opt_sync && arg_sync != NULL) {
+     .      .   90:         // Get lock
+     .      .   91: 	if (clock_gettime(CLOCK_MONOTONIC, & start) == -1) {
+     .      .   92: 	    fprintf(stderr, "Error retrieving time.\nclock_gettime: %s\n", strerror(errno));
+     .      .   93:             exit(1);
+     .      .   94:         }
+     .      .   95:         if ( * arg_sync == 'm') {
+     .      .   96: 	    for (int i = 0; i < num_lists; i++) {
+     .      .   97: 		if (pthread_mutex_lock( & lock_arr[i]) != 0) {
+     .      .   98: 		    fprintf(stderr, "Error locking mutex.\n");
+     .      .   99: 		    exit(1);
+     .      .  100: 		}
+     .      .  101: 	    }
+     .      .  102:         } else if ( * arg_sync == 's') {
+     .      .  103: 	    for (int i = 0; i < num_lists; i++) {
+     .      .  104: 		while (__sync_lock_test_and_set( & spin_lock_arr[i], 1)) {
+     .      .  105: 		    continue;
+     .      .  106: 		}
+     .      .  107: 	    }
+     .      .  108:         }
+     .      .  109: 	if (clock_gettime(CLOCK_MONOTONIC, & stop) == -1) {
+     .      .  110: 	    fprintf(stderr, "Error retrieving time.\nclock_gettime: %s\n", strerror(errno));
+     .      .  111:             exit(1);
+     .      .  112:         }
+     .      .  113:         my_data->mutex_wait_time += calc_elapsed_time(start, stop);
+     .      .  114:     }
+     .      .  115:     int length = 0;
+     .      .  116:     for (int i = 0; i < num_lists; i++) {
+     .      .  117: 	length += SortedList_length( & list_arr[i]);
      .      .  118:     }
-     .      .  119:     if (length < num_iterations) {
-     .      .  120:         fprintf(stderr, "Error inserting elements: got %d instead of %d.\n", length, num_iterations);
-     .      .  121:         exit(2);
-     .      .  122:     }
-     .      .  123: 
-     .      .  124:     // Look up and delete each of the keys previously inserted
-     .      .  125:     for (int i = 0; i < num_iterations; i++) {
-     .      .  126:         if (opt_sync && arg_sync != NULL) {
-     .      .  127:             // Get lock
-     .      .  128:             if ( * arg_sync == 'm') {
-     .      .  129: 		if (clock_gettime(CLOCK_MONOTONIC, & start) == -1) {
-     .      .  130:                     fprintf(stderr, "Error retrieving time.\nclock_gettime: %s\n", strerror(errno));
-     .      .  131:                     exit(1);
-     .      .  132:                 }
-     .      .  133:                 if (pthread_mutex_lock( & lock) != 0) {
-     .      .  134:                     fprintf(stderr, "Error locking mutex.\n");
-     .      .  135:                     exit(1);
-     .      .  136:                 }
-     .      .  137:             } else if ( * arg_sync == 's') {
-   877    877  138:                 while (__sync_lock_test_and_set( & spin_lock, 1)) {
-     2      2  139:                     continue;
-     .      .  140:                 }
-     .      .  141:             }
-     .      .  142: 	    if (clock_gettime(CLOCK_MONOTONIC, & stop) == -1) {
-     .      .  143: 		fprintf(stderr, "Error retrieving time.\nclock_gettime: %s\n", strerror(errno));
-     .      .  144: 		exit(1);
-     .      .  145: 	    }
-     .      .  146: 	    my_data->mutex_wait_time += calc_elapsed_time(start, stop);
-     .      .  147:         }
-     .     28  148:         SortedListElement_t * element = SortedList_lookup( & head, arr[i].key);
-     .      .  149:         if (element == NULL) {
-     .      .  150:             fprintf(stderr, "Error looking up element.\n");
-     .      .  151:             exit(2);
-     .      .  152:         }
-     .      .  153:         if (SortedList_delete(element) != 0) {
-     .      .  154:             fprintf(stderr, "Error deleting element.\n");
-     .      .  155:             exit(2);
-     .      .  156:         }
-     .      .  157:         if (opt_sync && arg_sync != NULL) {
-     .      .  158:             // Release lock
-     .      .  159:             if ( * arg_sync == 'm') {
-     .      .  160:                 if (pthread_mutex_unlock( & lock) != 0) {
-     .      .  161:                     fprintf(stderr, "Error unlocking mutex.\n");
-     .      .  162:                     exit(1);
-     .      .  163:                 }
-     .      .  164:             } else if ( * arg_sync == 's') {
-     .      .  165:                 __sync_lock_release( & spin_lock);
-     .      .  166:             }
-     .      .  167:         }
-     .      .  168:     }
-     .      .  169:     return NULL;
-     .      .  170: }
+     .      .  119:     if (opt_sync && arg_sync != NULL) {
+     .      .  120:         // Release lock
+     .      .  121:         if ( * arg_sync == 'm') {
+     .      .  122: 	    for (int i = 0; i < num_lists; i++) {
+     .      .  123: 		if (pthread_mutex_unlock( & lock_arr[i]) != 0) {
+     .      .  124: 		    fprintf(stderr, "Error unlocking mutex.\n");
+     .      .  125: 		    exit(1);
+     .      .  126: 		}
+     .      .  127: 	    }
+     .      .  128:         } else if ( * arg_sync == 's') {
+     .      .  129: 	    for (int i = 0; i < num_lists; i++) {
+     .      .  130: 		__sync_lock_release( & spin_lock_arr[i]);
+     .      .  131: 	    }
+     .      .  132:         }
+     .      .  133:     }
+     .      .  134:     if (length < num_iterations) {
+     .      .  135:         fprintf(stderr, "Error inserting elements: got %d instead of %d.\n", length, num_iterations);
+     .      .  136:         exit(2);
+     .      .  137:     }
+     .      .  138: 
+     .      .  139:     // Look up and delete each of the keys previously inserted
+     .      .  140:     for (int i = 0; i < num_iterations; i++) {
+     .      .  141: 	list_index = arr[i].key[0] % num_lists;
+     .      .  142:         if (opt_sync && arg_sync != NULL) {
+     .      .  143:             // Get lock
+     .      .  144: 	    if (clock_gettime(CLOCK_MONOTONIC, & start) == -1) {
+     .      .  145: 		fprintf(stderr, "Error retrieving time.\nclock_gettime: %s\n", strerror(errno));
+     .      .  146:                 exit(1);
+     .      .  147:             }
+     .      .  148:             if ( * arg_sync == 'm') {
+     .      .  149:                 if (pthread_mutex_lock( & lock_arr[list_index]) != 0) {
+     .      .  150:                     fprintf(stderr, "Error locking mutex.\n");
+     .      .  151:                     exit(1);
+     .      .  152:                 }
+     .      .  153:             } else if ( * arg_sync == 's') {
+     9      9  154:                 while (__sync_lock_test_and_set( & spin_lock_arr[list_index], 1)) {
+     .      .  155:                     continue;
+     .      .  156:                 }
+     .      .  157:             }
+     .      .  158: 	    if (clock_gettime(CLOCK_MONOTONIC, & stop) == -1) {
+     .      .  159: 		fprintf(stderr, "Error retrieving time.\nclock_gettime: %s\n", strerror(errno));
+     .      .  160: 		exit(1);
+     .      .  161: 	    }
+     .      .  162: 	    my_data->mutex_wait_time += calc_elapsed_time(start, stop);
+     .      .  163:         }
+     .     10  164:         SortedListElement_t * element = SortedList_lookup( & list_arr[list_index], arr[i].key);
+     .      .  165:         if (element == NULL) {
+     .      .  166:             fprintf(stderr, "Error looking up element.\n");
+     .      .  167:             exit(2);
+     .      .  168:         }
+     .      .  169:         if (SortedList_delete(element) != 0) {
+     .      .  170:             fprintf(stderr, "Error deleting element.\n");
+     .      .  171:             exit(2);
+     .      .  172:         }
+     .      .  173:         if (opt_sync && arg_sync != NULL) {
+     .      .  174:             // Release lock
+     .      .  175:             if ( * arg_sync == 'm') {
+     .      .  176:                 if (pthread_mutex_unlock( & lock_arr[list_index]) != 0) {
+     .      .  177:                     fprintf(stderr, "Error unlocking mutex.\n");
+     .      .  178:                     exit(1);
+     .      .  179:                 }
+     .      .  180:             } else if ( * arg_sync == 's') {
+     .      .  181:                 __sync_lock_release( & spin_lock_arr[list_index]);
+     .      .  182:             }
+     .      .  183:         }
+     .      .  184:     }
+     .      .  185:     return NULL;
+     .      .  186: }
 ---
-     .      .  171: 
-     .      .  172: void init_list_elements(int num_elements) {
-     .      .  173:     element_arr = malloc(sizeof(SortedListElement_t) * num_elements);
-     .      .  174:     if (element_arr == NULL) {
-     .      .  175:         fprintf(stderr, "Error allocating memory for elements.\n");
+     .      .  187: 
+     .      .  188: void init(int num_elements) {
+     .      .  189:     // Initialize list elements and keys to insert into linked list
+     .      .  190:     element_arr = malloc(sizeof(SortedListElement_t) * num_elements);
+     .      .  191:     if (element_arr == NULL) {
 ROUTINE ====================== thread_start_routine in /u/cs/ugrad/stewart/111/proj2b/lab2_list.c
-  2536   2565 Total samples (flat / cumulative)
-     .      .   38: 
-     .      .   39: long calc_elapsed_time(struct timespec start, struct timespec stop) {
-     .      .   40:     return (stop.tv_sec - start.tv_sec) * 1000000000L + (stop.tv_nsec - start.tv_nsec);
-     .      .   41: }
-     .      .   42: 
+   165    175 Total samples (flat / cumulative)
+     .      .   39: 
+     .      .   40: long calc_elapsed_time(struct timespec start, struct timespec stop) {
+     .      .   41:     return (stop.tv_sec - start.tv_sec) * 1000000000L + (stop.tv_nsec - start.tv_nsec);
+     .      .   42: }
+     .      .   43: 
 ---
-     .      .   43: void * thread_start_routine(void * threadarg) {
-     .      .   44:     struct thread_data * my_data = (struct thread_data * ) threadarg;
-     .      .   45:     SortedListElement_t * arr = my_data->elem_arr;
-     .      .   46:     struct timespec start, stop;
-     .      .   47:     // Insert all elements into global list
-     .      .   48:     for (int i = 0; i < num_iterations; i++) {
-     .      .   49:         if (opt_sync && arg_sync != NULL) {
-     .      .   50:             // Get lock
-     .      .   51:             if ( * arg_sync == 'm') {
-     .      .   52: 		if (clock_gettime(CLOCK_MONOTONIC, & start) == -1) {
-     .      .   53: 		    fprintf(stderr, "Error retrieving time.\nclock_gettime: %s\n", strerror(errno));
-     .      .   54: 		    exit(1);
-     .      .   55: 		}
-     .      .   56:                 if (pthread_mutex_lock( & lock) != 0) {
-     .      .   57:                     fprintf(stderr, "Error locking mutex.\n");
-     .      .   58:                     exit(1);
-     .      .   59:                 }
-     .      .   60:             } else if ( * arg_sync == 's') {
-  1643   1643   61:                 while (__sync_lock_test_and_set( & spin_lock, 1)) {
-     6      6   62:                     continue;
+     .      .   44: void * thread_start_routine(void * threadarg) {
+     .      .   45:     struct thread_data * my_data = (struct thread_data * ) threadarg;
+     .      .   46:     SortedListElement_t * arr = my_data->elem_arr;
+     .      .   47:     struct timespec start, stop;
+     .      .   48:     // Use simple modulo operation on first char of key as hash for index into list_arr and lock_arr
+     .      .   49:     int list_index = 0;
+     .      .   50:     // Insert all elements into list based on hash of key
+     .      .   51:     for (int i = 0; i < num_iterations; i++) {
+     .      .   52: 	list_index = arr[i].key[0] % num_lists;
+     .      .   53:         if (opt_sync && arg_sync != NULL) {
+     .      .   54:             // Get lock
+     .      .   55: 	    if (clock_gettime(CLOCK_MONOTONIC, & start) == -1) {
+     .      .   56: 		fprintf(stderr, "Error retrieving time.\nclock_gettime: %s\n", strerror(errno));
+     .      .   57:                 exit(1);
+     .      .   58:             }
+     .      .   59:             if ( * arg_sync == 'm') {
+     .      .   60:                 if (pthread_mutex_lock( & lock_arr[list_index]) != 0) {
+     .      .   61:                     fprintf(stderr, "Error locking mutex.\n");
+     .      .   62:                     exit(1);
      .      .   63:                 }
-     .      .   64:             }
-     .      .   65: 	    if (clock_gettime(CLOCK_MONOTONIC, & stop) == -1) {
-     .      .   66: 		fprintf(stderr, "Error retrieving time.\nclock_gettime: %s\n", strerror(errno));
-     .      .   67: 		exit(1);
-     .      .   68: 	    }
-     .      .   69: 	    my_data->mutex_wait_time += calc_elapsed_time(start, stop);
-     .      .   70:         }
-     .      1   71:         SortedList_insert( & head, & arr[i]);
-     .      .   72:         if (opt_sync && arg_sync != NULL) {
-     .      .   73:             // Release lock
-     .      .   74:             if ( * arg_sync == 'm') {
-     .      .   75:                 if (pthread_mutex_unlock( & lock) != 0) {
-     .      .   76:                     fprintf(stderr, "Error unlocking mutex.\n");
-     .      .   77:                     exit(1);
-     .      .   78:                 }
-     .      .   79:             } else if ( * arg_sync == 's') {
-     .      .   80:                 __sync_lock_release( & spin_lock);
-     .      .   81:             }
-     .      .   82:         }
-     .      .   83:     }
-     .      .   84:     // Check list length
-     .      .   85:     if (opt_sync && arg_sync != NULL) {
-     .      .   86:         // Get lock
-     .      .   87:         if ( * arg_sync == 'm') {
-     .      .   88: 	    if (clock_gettime(CLOCK_MONOTONIC, & start) == -1) {
-     .      .   89: 		fprintf(stderr, "Error retrieving time.\nclock_gettime: %s\n", strerror(errno));
-     .      .   90:                 exit(1);
-     .      .   91:             }
-     .      .   92:             if (pthread_mutex_lock( & lock) != 0) {
-     .      .   93:                 fprintf(stderr, "Error locking mutex.\n");
-     .      .   94:                 exit(1);
-     .      .   95:             }
-     .      .   96:         } else if ( * arg_sync == 's') {
-     8      8   97:             while (__sync_lock_test_and_set( & spin_lock, 1)) {
-     .      .   98:                 continue;
-     .      .   99:             }
-     .      .  100:         }
-     .      .  101: 	if (clock_gettime(CLOCK_MONOTONIC, & stop) == -1) {
-     .      .  102: 	    fprintf(stderr, "Error retrieving time.\nclock_gettime: %s\n", strerror(errno));
-     .      .  103:             exit(1);
-     .      .  104:         }
-     .      .  105:         my_data->mutex_wait_time += calc_elapsed_time(start, stop);
-     .      .  106:     }
-     .      .  107:     int length = SortedList_length( & head);
-     .      .  108:     if (opt_sync && arg_sync != NULL) {
-     .      .  109:         // Release lock
-     .      .  110:         if ( * arg_sync == 'm') {
-     .      .  111:             if (pthread_mutex_unlock( & lock) != 0) {
-     .      .  112:                 fprintf(stderr, "Error unlocking mutex.\n");
-     .      .  113:                 exit(1);
-     .      .  114:             }
-     .      .  115:         } else if ( * arg_sync == 's') {
-     .      .  116:             __sync_lock_release( & spin_lock);
-     .      .  117:         }
+     .      .   64:             } else if ( * arg_sync == 's') {
+   156    156   65:                 while (__sync_lock_test_and_set( & spin_lock_arr[list_index], 1)) {
+     .      .   66:                     continue;
+     .      .   67:                 }
+     .      .   68:             }
+     .      .   69: 	    if (clock_gettime(CLOCK_MONOTONIC, & stop) == -1) {
+     .      .   70: 		fprintf(stderr, "Error retrieving time.\nclock_gettime: %s\n", strerror(errno));
+     .      .   71: 		exit(1);
+     .      .   72: 	    }
+     .      .   73: 	    my_data->mutex_wait_time += calc_elapsed_time(start, stop);
+     .      .   74:         }
+     .      .   75:         SortedList_insert( & list_arr[list_index], & arr[i]);
+     .      .   76:         if (opt_sync && arg_sync != NULL) {
+     .      .   77:             // Release lock
+     .      .   78:             if ( * arg_sync == 'm') {
+     .      .   79:                 if (pthread_mutex_unlock( & lock_arr[list_index]) != 0) {
+     .      .   80:                     fprintf(stderr, "Error unlocking mutex.\n");
+     .      .   81:                     exit(1);
+     .      .   82:                 }
+     .      .   83:             } else if ( * arg_sync == 's') {
+     .      .   84:                 __sync_lock_release( & spin_lock_arr[list_index]);
+     .      .   85:             }
+     .      .   86:         }
+     .      .   87:     }
+     .      .   88:     // Check list length
+     .      .   89:     if (opt_sync && arg_sync != NULL) {
+     .      .   90:         // Get lock
+     .      .   91: 	if (clock_gettime(CLOCK_MONOTONIC, & start) == -1) {
+     .      .   92: 	    fprintf(stderr, "Error retrieving time.\nclock_gettime: %s\n", strerror(errno));
+     .      .   93:             exit(1);
+     .      .   94:         }
+     .      .   95:         if ( * arg_sync == 'm') {
+     .      .   96: 	    for (int i = 0; i < num_lists; i++) {
+     .      .   97: 		if (pthread_mutex_lock( & lock_arr[i]) != 0) {
+     .      .   98: 		    fprintf(stderr, "Error locking mutex.\n");
+     .      .   99: 		    exit(1);
+     .      .  100: 		}
+     .      .  101: 	    }
+     .      .  102:         } else if ( * arg_sync == 's') {
+     .      .  103: 	    for (int i = 0; i < num_lists; i++) {
+     .      .  104: 		while (__sync_lock_test_and_set( & spin_lock_arr[i], 1)) {
+     .      .  105: 		    continue;
+     .      .  106: 		}
+     .      .  107: 	    }
+     .      .  108:         }
+     .      .  109: 	if (clock_gettime(CLOCK_MONOTONIC, & stop) == -1) {
+     .      .  110: 	    fprintf(stderr, "Error retrieving time.\nclock_gettime: %s\n", strerror(errno));
+     .      .  111:             exit(1);
+     .      .  112:         }
+     .      .  113:         my_data->mutex_wait_time += calc_elapsed_time(start, stop);
+     .      .  114:     }
+     .      .  115:     int length = 0;
+     .      .  116:     for (int i = 0; i < num_lists; i++) {
+     .      .  117: 	length += SortedList_length( & list_arr[i]);
      .      .  118:     }
-     .      .  119:     if (length < num_iterations) {
-     .      .  120:         fprintf(stderr, "Error inserting elements: got %d instead of %d.\n", length, num_iterations);
-     .      .  121:         exit(2);
-     .      .  122:     }
-     .      .  123: 
-     .      .  124:     // Look up and delete each of the keys previously inserted
-     .      .  125:     for (int i = 0; i < num_iterations; i++) {
-     .      .  126:         if (opt_sync && arg_sync != NULL) {
-     .      .  127:             // Get lock
-     .      .  128:             if ( * arg_sync == 'm') {
-     .      .  129: 		if (clock_gettime(CLOCK_MONOTONIC, & start) == -1) {
-     .      .  130:                     fprintf(stderr, "Error retrieving time.\nclock_gettime: %s\n", strerror(errno));
-     .      .  131:                     exit(1);
-     .      .  132:                 }
-     .      .  133:                 if (pthread_mutex_lock( & lock) != 0) {
-     .      .  134:                     fprintf(stderr, "Error locking mutex.\n");
-     .      .  135:                     exit(1);
-     .      .  136:                 }
-     .      .  137:             } else if ( * arg_sync == 's') {
-   877    877  138:                 while (__sync_lock_test_and_set( & spin_lock, 1)) {
-     2      2  139:                     continue;
-     .      .  140:                 }
-     .      .  141:             }
-     .      .  142: 	    if (clock_gettime(CLOCK_MONOTONIC, & stop) == -1) {
-     .      .  143: 		fprintf(stderr, "Error retrieving time.\nclock_gettime: %s\n", strerror(errno));
-     .      .  144: 		exit(1);
-     .      .  145: 	    }
-     .      .  146: 	    my_data->mutex_wait_time += calc_elapsed_time(start, stop);
-     .      .  147:         }
-     .     28  148:         SortedListElement_t * element = SortedList_lookup( & head, arr[i].key);
-     .      .  149:         if (element == NULL) {
-     .      .  150:             fprintf(stderr, "Error looking up element.\n");
-     .      .  151:             exit(2);
-     .      .  152:         }
-     .      .  153:         if (SortedList_delete(element) != 0) {
-     .      .  154:             fprintf(stderr, "Error deleting element.\n");
-     .      .  155:             exit(2);
-     .      .  156:         }
-     .      .  157:         if (opt_sync && arg_sync != NULL) {
-     .      .  158:             // Release lock
-     .      .  159:             if ( * arg_sync == 'm') {
-     .      .  160:                 if (pthread_mutex_unlock( & lock) != 0) {
-     .      .  161:                     fprintf(stderr, "Error unlocking mutex.\n");
-     .      .  162:                     exit(1);
-     .      .  163:                 }
-     .      .  164:             } else if ( * arg_sync == 's') {
-     .      .  165:                 __sync_lock_release( & spin_lock);
-     .      .  166:             }
-     .      .  167:         }
-     .      .  168:     }
-     .      .  169:     return NULL;
-     .      .  170: }
+     .      .  119:     if (opt_sync && arg_sync != NULL) {
+     .      .  120:         // Release lock
+     .      .  121:         if ( * arg_sync == 'm') {
+     .      .  122: 	    for (int i = 0; i < num_lists; i++) {
+     .      .  123: 		if (pthread_mutex_unlock( & lock_arr[i]) != 0) {
+     .      .  124: 		    fprintf(stderr, "Error unlocking mutex.\n");
+     .      .  125: 		    exit(1);
+     .      .  126: 		}
+     .      .  127: 	    }
+     .      .  128:         } else if ( * arg_sync == 's') {
+     .      .  129: 	    for (int i = 0; i < num_lists; i++) {
+     .      .  130: 		__sync_lock_release( & spin_lock_arr[i]);
+     .      .  131: 	    }
+     .      .  132:         }
+     .      .  133:     }
+     .      .  134:     if (length < num_iterations) {
+     .      .  135:         fprintf(stderr, "Error inserting elements: got %d instead of %d.\n", length, num_iterations);
+     .      .  136:         exit(2);
+     .      .  137:     }
+     .      .  138: 
+     .      .  139:     // Look up and delete each of the keys previously inserted
+     .      .  140:     for (int i = 0; i < num_iterations; i++) {
+     .      .  141: 	list_index = arr[i].key[0] % num_lists;
+     .      .  142:         if (opt_sync && arg_sync != NULL) {
+     .      .  143:             // Get lock
+     .      .  144: 	    if (clock_gettime(CLOCK_MONOTONIC, & start) == -1) {
+     .      .  145: 		fprintf(stderr, "Error retrieving time.\nclock_gettime: %s\n", strerror(errno));
+     .      .  146:                 exit(1);
+     .      .  147:             }
+     .      .  148:             if ( * arg_sync == 'm') {
+     .      .  149:                 if (pthread_mutex_lock( & lock_arr[list_index]) != 0) {
+     .      .  150:                     fprintf(stderr, "Error locking mutex.\n");
+     .      .  151:                     exit(1);
+     .      .  152:                 }
+     .      .  153:             } else if ( * arg_sync == 's') {
+     9      9  154:                 while (__sync_lock_test_and_set( & spin_lock_arr[list_index], 1)) {
+     .      .  155:                     continue;
+     .      .  156:                 }
+     .      .  157:             }
+     .      .  158: 	    if (clock_gettime(CLOCK_MONOTONIC, & stop) == -1) {
+     .      .  159: 		fprintf(stderr, "Error retrieving time.\nclock_gettime: %s\n", strerror(errno));
+     .      .  160: 		exit(1);
+     .      .  161: 	    }
+     .      .  162: 	    my_data->mutex_wait_time += calc_elapsed_time(start, stop);
+     .      .  163:         }
+     .     10  164:         SortedListElement_t * element = SortedList_lookup( & list_arr[list_index], arr[i].key);
+     .      .  165:         if (element == NULL) {
+     .      .  166:             fprintf(stderr, "Error looking up element.\n");
+     .      .  167:             exit(2);
+     .      .  168:         }
+     .      .  169:         if (SortedList_delete(element) != 0) {
+     .      .  170:             fprintf(stderr, "Error deleting element.\n");
+     .      .  171:             exit(2);
+     .      .  172:         }
+     .      .  173:         if (opt_sync && arg_sync != NULL) {
+     .      .  174:             // Release lock
+     .      .  175:             if ( * arg_sync == 'm') {
+     .      .  176:                 if (pthread_mutex_unlock( & lock_arr[list_index]) != 0) {
+     .      .  177:                     fprintf(stderr, "Error unlocking mutex.\n");
+     .      .  178:                     exit(1);
+     .      .  179:                 }
+     .      .  180:             } else if ( * arg_sync == 's') {
+     .      .  181:                 __sync_lock_release( & spin_lock_arr[list_index]);
+     .      .  182:             }
+     .      .  183:         }
+     .      .  184:     }
+     .      .  185:     return NULL;
+     .      .  186: }
 ---
-     .      .  171: 
-     .      .  172: void init_list_elements(int num_elements) {
-     .      .  173:     element_arr = malloc(sizeof(SortedListElement_t) * num_elements);
-     .      .  174:     if (element_arr == NULL) {
-     .      .  175:         fprintf(stderr, "Error allocating memory for elements.\n");
+     .      .  187: 
+     .      .  188: void init(int num_elements) {
+     .      .  189:     // Initialize list elements and keys to insert into linked list
+     .      .  190:     element_arr = malloc(sizeof(SortedListElement_t) * num_elements);
+     .      .  191:     if (element_arr == NULL) {
