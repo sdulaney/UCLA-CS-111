@@ -1,0 +1,40 @@
+# NAME: Stewart Dulaney
+# EMAIL: sdulaney@ucla.edu
+# ID: 904-064-791
+
+CC = gcc
+CFLAGS = -g -Wall -Wextra -lpthread -lprofiler
+ID = 904-064-791
+LAB = 2b
+ARCHIVE = lab$(LAB)-$(ID).tar.gz
+OUTPUT = lab2b_list.csv profile.out
+GRAPHS = lab2b_1.png lab2b_2.png lab2b_3.png lab2b_4.png lab2b_5.png
+SCRIPTS = lab2_list.gp test_list.sh
+sources = lab2_list.c SortedList.c SortedList.h Makefile README $(OUTPUT) $(GRAPHS) $(SCRIPTS)
+
+build: lab2_list
+
+lab2_list:
+	$(CC) $(CFLAGS) lab2_list.c SortedList.c -o lab2_list
+
+tests: build
+	-chmod +x test_list.sh
+	-./test_list.sh > lab2b_list.csv
+
+profile: clean build
+	-env LD_PRELOAD=/usr/local/cs/gperftools-2.7/lib/libprofiler.so.0 CPUPROFILE=profileInfo.prof ./lab2_list --sync=s --threads=12 --iterations=1000
+	-pprof --text ./lab2_list ./profileInfo.prof > profile.out
+	-pprof --list=thread_start_routine ./lab2_list ./profileInfo.prof >> profile.out
+
+graphs: clean tests
+	-chmod +x lab2_list.gp
+	-gnuplot lab2_list.gp
+
+dist: clean graphs profile
+	tar -czf $(ARCHIVE) $(sources)
+
+clean:
+	-rm lab2_list
+	-rm profileInfo.prof
+	-rm lab$(LAB)-904-064-791.tar.gz
+
