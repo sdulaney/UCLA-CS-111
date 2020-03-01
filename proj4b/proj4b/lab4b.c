@@ -9,49 +9,46 @@
 #include <getopt.h>
 #include <string.h>
 #include <errno.h>
+#include <mraa.h>
+#include <signal.h>
 
-int main(int argc, char ** argv) {
+//int period = 1;
+
+sig_atomic_t volatile run_flag = 1;
+
+void do_when_interrupted() {
+  run_flag = 0;
+}
+
+int main() {
 
     // Process all arguments
-    int c;
-    int opt_threads = 0;
-    int opt_iterations = 0;
-    int opt_lists = 0;
-    char * arg_threads = NULL;
-    char * arg_iterations = NULL;
-    char * arg_yield = NULL;
-    char * arg_lists = NULL;
-    char default_val = '1';
+  /*  int c;
+    int opt_period = 0;
+    int opt_scale = 0;
+    int opt_log = 0;
+    char default_scale = 'F';
+    char * arg_period = NULL;
+    char * arg_scale = &default_scale;
+    char * arg_log = NULL;
 
     while (1) {
         int option_index = 0;
         static struct option long_options[] = {
             {
-                "threads",
-                optional_argument,
-                0,
-                0
-            },
-            {
-                "iterations",
-                optional_argument,
-                0,
-                0
-            },
-            {
-                "yield",
+                "period",
                 required_argument,
                 0,
                 0
             },
             {
-                "sync",
+                "scale",
                 required_argument,
                 0,
                 0
             },
-	    {
-                "lists",
+            {
+                "log",
                 required_argument,
                 0,
                 0
@@ -64,7 +61,7 @@ int main(int argc, char ** argv) {
             }
         };
 
-        c = getopt_long(argc, argv, "t::i::y:s:l:",
+        c = getopt_long(argc, argv, "p:s:l:",
             long_options, & option_index);
         if (c == -1)
             break;
@@ -72,44 +69,24 @@ int main(int argc, char ** argv) {
         const char * name = long_options[option_index].name;
         switch (c) {
         case 0:
-            if (strcmp(name, "threads") == 0) {
-                opt_threads = 1;
-                if (optarg)
-                    arg_threads = optarg;
-                else
-                    arg_threads = & default_val;
-            } else if (strcmp(name, "iterations") == 0) {
-                opt_iterations = 1;
-                if (optarg)
-                    arg_iterations = optarg;
-                else
-                    arg_iterations = & default_val;
-            } else if (strcmp(name, "sync") == 0) {
-                opt_sync = 1;
-                if (optarg)
-                    arg_sync = optarg;
-            } else if (strcmp(name, "yield") == 0) {
+            if (strcmp(name, "period") == 0) {
+                opt_period = 1;
                 if (optarg) {
-                    arg_yield = optarg;
-                    int len = strlen(arg_yield);
-                    for (int i = 0; i < len; i++) {
-                        if (optarg[i] == 'i')
-                            opt_yield |= INSERT_YIELD;
-                        else if (optarg[i] == 'd')
-                            opt_yield |= DELETE_YIELD;
-                        else if (optarg[i] == 'l')
-                            opt_yield |= LOOKUP_YIELD;
-                    }
-                }
-            } else if (strcmp(name, "lists") == 0) {
-                opt_lists = 1;
+                    arg_period = optarg;
+		    period = atoi(arg_period);
+		}
+            } else if (strcmp(name, "scale") == 0) {
+                opt_scale = 1;
                 if (optarg)
-                    arg_lists = optarg;
+                    arg_scale = optarg;
+            } else if (strcmp(name, "log") == 0) {
+                if (optarg)
+                    arg_log = optarg;
             }
             break;
 
         case '?':
-            fprintf(stderr, "usage: ./lab2_list [OPTION]...\nvalid options: --threads=# (default 1), --iterations=# (default 1), --yield=[idl], --sync=[ms], --lists=# (default 1)\n");
+            fprintf(stderr, "usage: ./lab4b [OPTION]...\nvalid options: --period=# (default 1), --scale=[FC] (default C), --log=filename\n");
             exit(1);
             break;
 
@@ -117,17 +94,27 @@ int main(int argc, char ** argv) {
             printf("?? getopt returned character code 0%o ??\n", c);
         }
     }
+*/
 
-    // Set default value of 1 for --threads, --iterations, --lists if those options aren't given on command line
-    if (opt_threads == 0)
-        arg_threads = & default_val;
-    if (opt_iterations == 0)
-        arg_iterations = & default_val;
-    if (opt_lists == 0)
-        arg_lists = & default_val;
-    num_threads = atoi(arg_threads);
-    num_iterations = atoi(arg_iterations);
-    num_lists = atoi(arg_lists);
+    mraa_gpio_context buzzer, button;
+    buzzer = mraa_gpio_init(62);
+    button = mraa_gpio_init(60);
 
+    mraa_gpio_dir(buzzer, MRAA_GPIO_OUT);
+    mraa_gpio_dir(button, MRAA_GPIO_IN);
+
+    mraa_gpio_isr(button, MRAA_GPIO_EDGE_RISING, &do_when_interrupted, NULL);
+
+    while (run_flag) {
+	mraa_gpio_write(buzzer, 1);
+	sleep(1);
+	mraa_gpio_write(buzzer, 0);
+	sleep(1);
+    }
+
+    mraa_gpio_write(buzzer, 0);
+    mraa_gpio_close(buzzer);
+    mraa_gpio_close(button);
+  
     exit(0);
 }
