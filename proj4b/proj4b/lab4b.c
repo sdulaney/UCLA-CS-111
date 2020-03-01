@@ -22,6 +22,7 @@ void do_when_interrupted() {
   run_flag = 0;
 }
 
+// Precondition: *scale is 'C' or 'F'
 float get_temp(char* scale) {
     if (scale == NULL)
 	return 0.0;
@@ -40,7 +41,7 @@ float get_temp(char* scale) {
 	return temperature;
     }
     else {
-	return temperature * (9/5) + 32;
+	return temperature * (9.0/5) + 32;
     }
 }
 

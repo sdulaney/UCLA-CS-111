@@ -39,8 +39,8 @@ float get_temp(char* scale) {
     if (*scale == 'C') {
 	return temperature;
     }
-    else {
-	return temperature * (9/5) + 32;
+    else if (*scale == 'F') {
+	return temperature * (9.0/5) + 32;
     }
 }
 
@@ -151,7 +151,7 @@ int main(int argc, char ** argv) {
 
     while (run_flag) {
 	float temperature = get_temp(arg_scale);
-	fprintf(stdout, "%d\n", temperature);
+	fprintf(stdout, "%f\n", temperature);
 	sleep(1);
     }
 
