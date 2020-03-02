@@ -12,11 +12,27 @@
 #include <mraa.h>
 #include <signal.h>
 #include <math.h>
+#include <time.h>
+#include <sys/time.h>
+#include <fcntl.h>
+
+// getopt options and arguments
+int opt_period = 0;
+int opt_scale = 0;
+int opt_log = 0;
+char default_scale = 'F';
+char * arg_period = NULL;
+char * arg_scale = &default_scale;
+char * arg_log = NULL;
 
 int period = 1;
 sig_atomic_t volatile run_flag = 1;
 mraa_aio_context temp_sensor;
 mraa_gpio_context button;
+struct timeval raw_time;
+struct tm* parsed_time;
+time_t next_time = 0;
+int logfd = 0;
 
 void do_when_interrupted() {
   run_flag = 0;
@@ -45,17 +61,22 @@ float get_temp(char* scale) {
     }
 }
 
+void print_report() {
+    gettimeofday(&raw_time, NULL);
+    if (raw_time.tv_sec >= next_time) {
+	float temperature = get_temp(arg_scale);
+	parsed_time = localtime(&raw_time.tv_sec);
+	dprintf(1, "%02d:%02d:%02d %.1f\n", parsed_time->tm_hour, parsed_time->tm_min, parsed_time->tm_sec, temperature);
+	if (opt_log)
+	    dprintf(logfd, "%02d:%02d:%02d %.1f\n", parsed_time->tm_hour, parsed_time->tm_min, parsed_time->tm_sec, temperature);
+	next_time = raw_time.tv_sec + period;
+    }
+}
+
 int main(int argc, char ** argv) {
 
     // Process all arguments
     int c;
-    int opt_period = 0;
-    int opt_scale = 0;
-    int opt_log = 0;
-    char default_scale = 'F';
-    char * arg_period = NULL;
-    char * arg_scale = &default_scale;
-    char * arg_log = NULL;
 
     while (1) {
         int option_index = 0;
@@ -105,8 +126,14 @@ int main(int argc, char ** argv) {
                 if (optarg)
                     arg_scale = optarg;
             } else if (strcmp(name, "log") == 0) {
+		opt_log = 1;
                 if (optarg)
                     arg_log = optarg;
+		logfd = creat(arg_log, 0666);
+		if (logfd < 0) {
+		    fprintf(stderr, "Error: the log file could not be created.\n");
+		    exit(1);
+		}
             }
             break;
 
@@ -151,8 +178,7 @@ int main(int argc, char ** argv) {
     mraa_gpio_isr(button, MRAA_GPIO_EDGE_RISING, &do_when_interrupted, NULL);
 
     while (run_flag) {
-	float temperature = get_temp(arg_scale);
-	fprintf(stdout, "%f\n", temperature);
+	print_report();
 	sleep(1);
     }
 
