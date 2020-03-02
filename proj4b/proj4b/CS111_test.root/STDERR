@@ -1,0 +1,3 @@
+./lab4b: unrecognized option '--bogus'
+usage: ./lab4b [OPTION]...
+valid options: --period=# (default 1), --scale=[FC] (default C), --log=filename
