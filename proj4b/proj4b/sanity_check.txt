@@ -1,0 +1,90 @@
+... using test directory /home/debian/111/proj4b/CS111_test.root
+... extracting /home/debian/111/proj4b/lab4b-904-064-791.tar.gz
+lab4b.c
+Makefile
+README
+test.sh
+... checking for README file
+    README ... OK
+... checking for submitter ID in README
+    single submitter: 904-064-791
+... checking for submitter email in README
+    single address: sdulaney@ucla.edu ... OK
+... checking for submitter name in README
+    submitter(s): Stewart Dulaney ... OK
+... checking slip-day use in README
+    no SLIPDAYS: entry
+... checking for other expected files
+    Makefile ... OK
+... checking for required Make targets
+    Makefile target clean ... OK
+    Makefile target dist ... OK
+... checking for required compillation options
+    Makefile includes Wall ... OK
+    Makefile includes Wextra ... OK
+... building default target(s)
+gcc -g -Wall -Wextra -lmraa -lm lab4b.c -o lab4b
+    RC=0 ... OK
+    error output ...  NONE
+... deleting programs and data to force rebuild
+... checking make dist
+rm lab4b
+Makefile:23: recipe for target 'clean' failed
+rm lab4b-904-064-791.tar.gz
+Makefile:23: recipe for target 'clean' failed
+tar -czf lab4b-904-064-791.tar.gz lab4b.c Makefile README test.sh
+    RC=0 ... OK
+    lab4b-904-064-791.tar.gz ... OK
+ ... checking make clean
+rm lab4b
+rm: cannot remove ‘lab4b’: No such file or directory
+Makefile:23: recipe for target 'clean' failed
+make: [clean] Error 1 (ignored)
+rm lab4b-904-064-791.tar.gz
+    RC=0 ... OK
+    restored to freshly untar-ed state ... OK
+... redo default make
+gcc -g -Wall -Wextra -lmraa -lm lab4b.c -o lab4b
+    RC=0 ... OK
+    error output ...  NONE
+... checking for expected products
+    lab4b ... OK
+... lab4b detects/reports bogus arguments
+    RC=1 ... OK
+        ./lab4b: unrecognized option '--bogus'
+usage: ./lab4b [OPTION]...
+valid options: --period=# (default 1), --scale=[FC] (default F), --log=filename
+
+... lab4b supports --scale, --period, --log
+06:36:35 22.1
+06:36:35 SHUTDOWN
+... lab4b supports and logs all sensor commands
+    SCALE=F ... RECOGNIZED AND LOGGED
+    PERIOD=1 ... RECOGNIZED AND LOGGED
+    START ... RECOGNIZED AND LOGGED
+    STOP ... RECOGNIZED AND LOGGED
+    OFF ... RECOGNIZED AND LOGGED
+    SHUTDOWN ... RECOGNIZED AND LOGGED
+    LOG test ... RECOGNIZED AND LOGGED
+
+... lab4b correctly processes input from pipe_test
+    SCALE=F ... RECOGNIZED AND LOGGED
+    PERIOD=1 ... RECOGNIZED AND LOGGED
+    START ... RECOGNIZED AND LOGGED
+    STOP ... RECOGNIZED AND LOGGED
+    OFF ... RECOGNIZED AND LOGGED
+    SHUTDOWN ... RECOGNIZED AND LOGGED
+    LOG test ... RECOGNIZED AND LOGGED
+
+... correct reporting format
+    06:36:35 22.1 06:36:37 22.1 06:36:39 22.1 ... OK
+
+THIS SUBMISSION WILL USE NO SLIP-DAYS
+
+THE ONLY STUDENTS WHO WILL RECEIVE CREDIT FOR THIS SUBMISSION ARE:
+    904-064-791    sdulaney@ucla.edu
+
+... cleaning up temporary files
+... removing test directory /home/debian/111/proj4b/CS111_test.root
+
+SUBMISSION lab4b-904-064-791.tar.gz ... passes sanity check
