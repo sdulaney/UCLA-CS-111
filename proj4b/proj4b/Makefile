@@ -1,10 +1,10 @@
 # NAME: Stewart Dulaney
 # EMAIL: sdulaney@ucla.edu
-# ID: 904-064-791
+# ID: 904064791
 
 CC = gcc
 CFLAGS = -g -Wall -Wextra -lmraa -lm
-ID = 904-064-791
+ID = 904064791
 LAB = 4b
 ARCHIVE = lab$(LAB)-$(ID).tar.gz
 SCRIPTS = test.sh
@@ -21,7 +21,7 @@ check: build
 
 clean:
 	-rm lab4b
-	-rm lab$(LAB)-904-064-791.tar.gz
+	-rm lab$(LAB)-904064791.tar.gz
 
 dist: clean
 	tar -czf $(ARCHIVE) $(sources)

@@ -1,6 +1,6 @@
 # NAME: Stewart Dulaney
 # EMAIL: sdulaney@ucla.edu
-# ID: 904-064-791
+# ID: 904064791
 #
 #!/bin/sh
 
@@ -14,7 +14,7 @@ else
     echo "Error: did not get exit code 0"
 fi
 
-for cmd in STOP SCALE=F SCALE=C PERIOD=2 START "LOG hi" blah SHUTDOWN
+for cmd in STOP SCALE=F SCALE=C PERIOD=2 START "LOG hi" blah SHUTDOWN OFF
 do
     grep "$cmd" LOGFILE > /dev/null
     if [ $? -eq 0 ]
