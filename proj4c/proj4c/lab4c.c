@@ -409,8 +409,10 @@ int main(int argc, char ** argv) {
         // TLS set up
         SSL_load_error_strings();
         SSL_library_init();
+        // TODO: https://piazza.com/class/k4x6oonkcge2mj?cid=1049
         // OPENSSL_add_all_algorithms();
         SSL_CTX * ssl_ctx;
+        // TODO: https://piazza.com/class/k4x6oonkcge2mj?cid=1048
         // ssl_ctx = SSL_CTX_new(TLSv1_client_method());
         ssl_ctx = SSL_CTX_new(TLS_client_method());
         if (ssl_ctx == NULL) {
