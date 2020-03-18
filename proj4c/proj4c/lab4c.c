@@ -46,7 +46,6 @@ int report = 1;
 int id = 0;
 int port = 0;
 mraa_aio_context temp_sensor;
-mraa_gpio_context button;
 struct timeval raw_time;
 struct tm * parsed_time;
 time_t next_time = 0;
@@ -66,10 +65,6 @@ void shutdown(int from_cmd) {
         dprintf(logfd, "%02d:%02d:%02d SHUTDOWN\n", parsed_time - > tm_hour, parsed_time - > tm_min, parsed_time - > tm_sec);
     }
     exit(0);
-}
-
-void do_when_interrupted() {
-    shutdown(0);
 }
 
 // Precondition: *scale is 'C' or 'F'
@@ -283,27 +278,8 @@ int main(int argc, char ** argv) {
         exit(1);
     }
 
-    // Initialize GPIO pin for the button
-    button = mraa_gpio_init(60);
-    if (button == NULL) {
-        fprintf(stderr, "Error initializing GPIO 60 (button).\n");
-        mraa_deinit();
-        exit(1);
-    }
-
     // Use for MRAA error checking
     int status;
-
-    // Set GPIO button to input
-    status = mraa_gpio_dir(button, MRAA_GPIO_IN);
-    if (status != MRAA_SUCCESS) {
-        fprintf(stderr, "Error setting GPIO 60 (button) to input.\n");
-        mraa_deinit();
-        exit(1);
-    }
-
-    // When the button is pressed, call do_when_interrupted
-    mraa_gpio_isr(button, MRAA_GPIO_EDGE_RISING, & do_when_interrupted, NULL);
 
     struct pollfd poll_commands[1];
     poll_commands[0].fd = 0;
@@ -325,14 +301,6 @@ int main(int argc, char ** argv) {
     status = mraa_aio_close(temp_sensor);
     if (status != MRAA_SUCCESS) {
         fprintf(stderr, "Error closing AIO 1 (temperature sensor).\n");
-        mraa_deinit();
-        exit(1);
-    }
-
-    // Close GPIO button
-    status = mraa_gpio_close(button);
-    if (status != MRAA_SUCCESS) {
-        fprintf(stderr, "Error closing GPIO 60 (button).\n");
         mraa_deinit();
         exit(1);
     }
