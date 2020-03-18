@@ -3,7 +3,7 @@
 # ID: 904064791
 
 CC = gcc
-CFLAGS = -g -Wall -Wextra -lmraa -lm
+CFLAGS = -g -Wall -Wextra -lmraa -lm -lssl -lcrypto
 ID = 904064791
 LAB = 4c
 ARCHIVE = lab$(LAB)-$(ID).tar.gz
@@ -23,6 +23,8 @@ check: build
 
 clean:
 	-rm lab$(LAB)
+	-rm lab$(LAB)_tcp
+	-rm lab$(LAB)_tls
 	-rm $(ARCHIVE)
 
 dist: clean

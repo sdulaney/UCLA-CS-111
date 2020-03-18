@@ -34,6 +34,12 @@
 
 #include <netdb.h>
 
+#include <openssl/ssl.h>
+
+#include <openssl/err.h>
+
+#include <openssl/evp.h>
+
 // getopt options and arguments
 int opt_period = 0;
 int opt_scale = 0;
@@ -60,15 +66,25 @@ int logfd = 0;
 char command_buf[512];
 char * command_buf_ptr = & command_buf[0];
 int command_buf_capac = 512;
+SSL * conn_data;
 
-// from_cmd is 1 when shutdown is triggered by a command, and 0 otherwise
-void shut_down(int from_cmd) {
+
+void shut_down(int tls) {
     gettimeofday( & raw_time, NULL);
     parsed_time = localtime( & raw_time.tv_sec);
-    dprintf(1, "%02d:%02d:%02d SHUTDOWN\n", parsed_time->tm_hour, parsed_time->tm_min, parsed_time->tm_sec);
+    if (tls) {
+        char buf[18];
+        snprintf(&buf[0], 18, "%02d:%02d:%02d SHUTDOWN\n", parsed_time->tm_hour, parsed_time->tm_min, parsed_time->tm_sec);
+        int ret_code = SSL_write(conn_data, &buf, 18);
+        if (ret_code < 18) {
+            fprintf(stderr, "Error writing SHUTDOWN with TLS.\n");
+            exit(2);
+        }
+    } else {
+        dprintf(sockfd, "%02d:%02d:%02d SHUTDOWN\n", parsed_time->tm_hour, parsed_time->tm_min, parsed_time->tm_sec);
+    }
     if (opt_log) {
-        if (from_cmd)
-            dprintf(logfd, "OFF\n");
+        dprintf(logfd, "OFF\n");
         dprintf(logfd, "%02d:%02d:%02d SHUTDOWN\n", parsed_time->tm_hour, parsed_time->tm_min, parsed_time->tm_sec);
     }
     exit(0);
@@ -96,21 +112,31 @@ float get_temp(char * scale) {
     }
 }
 
-void send_report() {
+void send_report(int tls) {
     gettimeofday( & raw_time, NULL);
     if (report && raw_time.tv_sec >= next_time) {
         float temperature = get_temp(arg_scale);
         parsed_time = localtime( & raw_time.tv_sec);
-        dprintf(sockfd, "%02d:%02d:%02d %.1f\n", parsed_time->tm_hour, parsed_time->tm_min, parsed_time->tm_sec, temperature);
+        if (tls) {
+            char buf[14];
+            snprintf(&buf[0], 14, "%02d:%02d:%02d %.1f\n", parsed_time->tm_hour, parsed_time->tm_min, parsed_time->tm_sec, temperature);
+            int ret_code = SSL_write(conn_data, &buf, 14);
+            if (ret_code < 14) {
+                fprintf(stderr, "Error sending report with TLS.\n");
+                exit(2);
+            }
+        } else {
+            dprintf(sockfd, "%02d:%02d:%02d %.1f\n", parsed_time->tm_hour, parsed_time->tm_min, parsed_time->tm_sec, temperature);
+        }
         if (opt_log)
             dprintf(logfd, "%02d:%02d:%02d %.1f\n", parsed_time->tm_hour, parsed_time->tm_min, parsed_time->tm_sec, temperature);
         next_time = raw_time.tv_sec + period;
     }
 }
 
-void handle_commands(char * cmd, int len) {
+void handle_commands(char * cmd, int len, int tls) {
     if (strncmp(cmd, "OFF\n", len) == 0) {
-        shut_down(1);
+        shut_down(tls);
     } else if (strncmp(cmd, "SCALE=F\n", len) == 0) {
         scale = 'F';
     } else if (strncmp(cmd, "SCALE=C\n", len) == 0) {
@@ -139,19 +165,28 @@ void handle_commands(char * cmd, int len) {
     }
 }
 
-void process_commands() {
-    ssize_t rv = read(sockfd, command_buf_ptr, command_buf_capac);
-
-    if (rv == -1) {
-        fprintf(stderr, "Error reading commands.\n");
-        exit(2);
+void process_commands(int tls) {
+    int rv = 0;
+    if (tls) {
+        rv = SSL_read(conn_data, command_buf_ptr, command_buf_capac);
+        if (rv <= 0) {
+            fprintf(stderr, "Error reading commands with TLS.\n");
+            exit(2);
+        }
+    } else {
+        rv = read(sockfd, command_buf_ptr, command_buf_capac);
+        if (rv == -1) {
+            fprintf(stderr, "Error reading commands.\n");
+            exit(2);
+        }
     }
+    
     int cmd_len = 0;
     int i;
     for (i = 0; i < rv + (512 - command_buf_capac); i++) {
         cmd_len++;
         if (command_buf[i] == '\n') {
-            handle_commands( & command_buf[i - cmd_len + 1], cmd_len);
+            handle_commands( & command_buf[i - cmd_len + 1], cmd_len, tls);
             cmd_len = 0;
         }
     }
@@ -163,6 +198,32 @@ void process_commands() {
         }
         command_buf_ptr = & command_buf[0] + cmd_len;
         command_buf_capac = 512 - cmd_len;
+    }
+}
+
+void send_id(int tls) {
+    // Send (and log) an ID terminated with a newline
+    char id_str[13] = {'I', 'D', '=', arg_id[0], arg_id[1], arg_id[2], arg_id[3], arg_id[4], arg_id[5], arg_id[6], arg_id[7], arg_id[8], '\n'};
+    int ret_code = 0;
+    if (tls) {
+        ret_code = SSL_write(conn_data, &id_str, 13);
+        if (ret_code < 13) {
+            fprintf(stderr, "Error writing ID to socket.\n");
+            exit(2);
+        }
+    } else {
+        ret_code = write(sockfd, &id_str, 13);
+        if (ret_code < 13) {
+            fprintf(stderr, "Error writing ID to socket.\n");
+            exit(2);
+        }
+    }
+    if (opt_log) {
+        ret_code = write(logfd, &id_str, 13);
+        if (ret_code < 13) {
+            fprintf(stderr, "Error writing ID to log.\n");
+            exit(2);
+        }
     }
 }
 
@@ -325,34 +386,78 @@ int main(int argc, char ** argv) {
         exit(2);
     }
 
-    // Send (and log) an ID terminated with a newline
-    char id_str[13] = {'I', 'D', '=', arg_id[0], arg_id[1], arg_id[2], arg_id[3], arg_id[4], arg_id[5], arg_id[6], arg_id[7], arg_id[8], '\n'};
-    ret_code = write(sockfd, &id_str, 13);
-    if (ret_code < 13) {
-        fprintf(stderr, "Error writing ID to socket.\n");
-        exit(2);
-    }
-    ret_code = write(logfd, &id_str, 13);
-    if (ret_code < 13) {
-        fprintf(stderr, "Error writing ID to log.\n");
-        exit(2);
-    }
-
     struct pollfd poll_commands[1];
     poll_commands[0].fd = sockfd;
     poll_commands[0].events = POLLIN;
     poll_commands[0].revents = 0;
 
+    send_id(0);
     while (1) {
-        send_report();
+        send_report(0);
         int rv_poll = poll( & poll_commands[0], 1, 0);
         if (rv_poll == -1) {
             fprintf(stderr, "Error polling for commands.\n");
             exit(2);
         } else if (rv_poll > 0 && (poll_commands[0].revents & POLLIN)) {
-            process_commands();
+            process_commands(0);
         }
     }
+
+    // if (strncmp(argv[0], "lab4c_tcp", 9) == 0) {
+    //     send_id(0);
+    //     while (1) {
+    //         send_report(0);
+    //         int rv_poll = poll( & poll_commands[0], 1, 0);
+    //         if (rv_poll == -1) {
+    //             fprintf(stderr, "Error polling for commands.\n");
+    //             exit(2);
+    //         } else if (rv_poll > 0 && (poll_commands[0].revents & POLLIN)) {
+    //             process_commands(0);
+    //         }
+    //     }
+    // } else if (strncmp(argv[0], "lab4c_tls", 9) == 0) {
+    //     // TLS set up
+    //     SSL_load_error_strings();
+    //     SSL_library_init();
+    //     // OPENSSL_add_all_algorithms();
+    //     SSL_CTX * ssl_ctx;
+    //     // ssl_ctx = SSL_CTX_new(TLSv1_client_method());
+    //     ssl_ctx = SSL_CTX_new(TLS_client_method());
+    //     if (ssl_ctx == NULL) {
+    //         fprintf(stderr, "Error creating TLS context object.\n");
+    //         exit(2);
+    //     }
+    //     conn_data = SSL_new(ssl_ctx);
+    //     if (conn_data == NULL) {
+    //         fprintf(stderr, "Error creating TLS connection data struct.\n");
+    //         exit(2);
+    //     }
+    //     if (SSL_set_fd(conn_data, sockfd) == 0) {
+    //         fprintf(stderr, "Error setting TLS file descriptor.\n");
+    //         exit(2);
+    //     }
+    //     ret_code = SSL_connect(conn_data);
+    //     if (ret_code == 0) {
+    //         fprintf(stderr, "Error initiating TLS handshake with the server (controlled shutdown).\n");
+    //         exit(2);
+    //     }
+    //     if (ret_code < 0) {
+    //         fprintf(stderr, "Error initiating TLS handshake with the server (fatal protocol-level error).\n");
+    //         exit(2);
+    //     }
+
+    //     send_id(1);
+    //     while (1) {
+    //         send_report(1);
+    //         int rv_poll = poll( & poll_commands[0], 1, 0);
+    //         if (rv_poll == -1) {
+    //             fprintf(stderr, "Error polling for commands.\n");
+    //             exit(2);
+    //         } else if (rv_poll > 0 && (poll_commands[0].revents & POLLIN)) {
+    //             process_commands(1);
+    //         }
+    //     }
+    // }
 
     // Close AIO temperature sensor
     int status = mraa_aio_close(temp_sensor);
