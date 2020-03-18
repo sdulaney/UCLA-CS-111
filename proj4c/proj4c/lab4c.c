@@ -28,6 +28,8 @@
 
 #include <sys/poll.h>
 
+#include <sys/socket.h>
+
 // getopt options and arguments
 int opt_period = 0;
 int opt_scale = 0;
@@ -258,6 +260,21 @@ int main(int argc, char ** argv) {
         }
     }
 
+    if (opt_id == 0) {
+        fprintf(stderr, "Error: option --id=9-digit-number is mandatory.\n");
+        exit(1);
+    }
+
+    if (opt_host == 0) {
+        fprintf(stderr, "Error: option --host=name or address is mandatory.\n");
+        exit(1);
+    }
+
+    if (opt_log == 0) {
+        fprintf(stderr, "Error: option --log=filename is mandatory.\n");
+        exit(1);
+    }
+
     if (optind == argc - 1) {
         port = atoi(argv[optind]);
         if (port < 0) {
@@ -266,7 +283,7 @@ int main(int argc, char ** argv) {
         }
     }
     else {
-        fprintf(stderr, "Error: incorrect number of non-option arguments.\n");
+        fprintf(stderr, "Error: incorrect number of non-option arguments.\nSingle non-option argument \"port number\" is mandatory.\n");
         exit(1);
     }
 
@@ -278,8 +295,8 @@ int main(int argc, char ** argv) {
         exit(1);
     }
 
-    // Use for MRAA error checking
-    int status;
+    // Open a TCP connection to the server at the specified address and port
+
 
     struct pollfd poll_commands[1];
     poll_commands[0].fd = 0;
@@ -298,7 +315,7 @@ int main(int argc, char ** argv) {
     }
 
     // Close AIO temperature sensor
-    status = mraa_aio_close(temp_sensor);
+    int status = mraa_aio_close(temp_sensor);
     if (status != MRAA_SUCCESS) {
         fprintf(stderr, "Error closing AIO 1 (temperature sensor).\n");
         mraa_deinit();
