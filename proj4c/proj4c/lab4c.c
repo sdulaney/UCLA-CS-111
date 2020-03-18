@@ -75,8 +75,8 @@ void shut_down(int tls) {
     gettimeofday( & raw_time, NULL);
     parsed_time = localtime( & raw_time.tv_sec);
     if (tls) {
-        char buf[18];
-        snprintf(&buf[0], 18, "%02d:%02d:%02d SHUTDOWN\n", parsed_time->tm_hour, parsed_time->tm_min, parsed_time->tm_sec);
+        char buf[19];
+        snprintf(&buf[0], 19, "%02d:%02d:%02d SHUTDOWN\n", parsed_time->tm_hour, parsed_time->tm_min, parsed_time->tm_sec);
         int ret_code = SSL_write(conn_data, &buf, 18);
         if (ret_code < 18) {
             fprintf(stderr, "Error writing SHUTDOWN with TLS.\n");
@@ -120,8 +120,8 @@ void send_report(int tls) {
         float temperature = get_temp(arg_scale);
         parsed_time = localtime( & raw_time.tv_sec);
         if (tls) {
-            char buf[14];
-            snprintf(&buf[0], 14, "%02d:%02d:%02d %.1f\n", parsed_time->tm_hour, parsed_time->tm_min, parsed_time->tm_sec, temperature);
+            char buf[15];
+            snprintf(&buf[0], 15, "%02d:%02d:%02d %.1f\n", parsed_time->tm_hour, parsed_time->tm_min, parsed_time->tm_sec, temperature);
             int ret_code = SSL_write(conn_data, &buf, 14);
             if (ret_code < 14) {
                 fprintf(stderr, "Error sending report with TLS.\n");
