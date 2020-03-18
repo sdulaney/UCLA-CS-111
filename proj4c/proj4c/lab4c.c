@@ -30,6 +30,10 @@
 
 #include <sys/socket.h>
 
+#include <netinet/in.h>
+
+#include <netdb.h>
+
 // getopt options and arguments
 int opt_period = 0;
 int opt_scale = 0;
@@ -51,20 +55,21 @@ mraa_aio_context temp_sensor;
 struct timeval raw_time;
 struct tm * parsed_time;
 time_t next_time = 0;
+int sockfd = 0;
 int logfd = 0;
 char command_buf[512];
 char * command_buf_ptr = & command_buf[0];
 int command_buf_capac = 512;
 
 // from_cmd is 1 when shutdown is triggered by a command, and 0 otherwise
-void shutdown(int from_cmd) {
+void shut_down(int from_cmd) {
     gettimeofday( & raw_time, NULL);
     parsed_time = localtime( & raw_time.tv_sec);
-    dprintf(1, "%02d:%02d:%02d SHUTDOWN\n", parsed_time - > tm_hour, parsed_time - > tm_min, parsed_time - > tm_sec);
+    dprintf(1, "%02d:%02d:%02d SHUTDOWN\n", parsed_time->tm_hour, parsed_time->tm_min, parsed_time->tm_sec);
     if (opt_log) {
         if (from_cmd)
             dprintf(logfd, "OFF\n");
-        dprintf(logfd, "%02d:%02d:%02d SHUTDOWN\n", parsed_time - > tm_hour, parsed_time - > tm_min, parsed_time - > tm_sec);
+        dprintf(logfd, "%02d:%02d:%02d SHUTDOWN\n", parsed_time->tm_hour, parsed_time->tm_min, parsed_time->tm_sec);
     }
     exit(0);
 }
@@ -91,21 +96,21 @@ float get_temp(char * scale) {
     }
 }
 
-void print_report() {
+void send_report() {
     gettimeofday( & raw_time, NULL);
     if (report && raw_time.tv_sec >= next_time) {
         float temperature = get_temp(arg_scale);
         parsed_time = localtime( & raw_time.tv_sec);
-        dprintf(1, "%02d:%02d:%02d %.1f\n", parsed_time - > tm_hour, parsed_time - > tm_min, parsed_time - > tm_sec, temperature);
+        dprintf(sockfd, "%02d:%02d:%02d %.1f\n", parsed_time->tm_hour, parsed_time->tm_min, parsed_time->tm_sec, temperature);
         if (opt_log)
-            dprintf(logfd, "%02d:%02d:%02d %.1f\n", parsed_time - > tm_hour, parsed_time - > tm_min, parsed_time - > tm_sec, temperature);
+            dprintf(logfd, "%02d:%02d:%02d %.1f\n", parsed_time->tm_hour, parsed_time->tm_min, parsed_time->tm_sec, temperature);
         next_time = raw_time.tv_sec + period;
     }
 }
 
 void handle_commands(char * cmd, int len) {
     if (strncmp(cmd, "OFF\n", len) == 0) {
-        shutdown(1);
+        shut_down(1);
     } else if (strncmp(cmd, "SCALE=F\n", len) == 0) {
         scale = 'F';
     } else if (strncmp(cmd, "SCALE=C\n", len) == 0) {
@@ -135,11 +140,11 @@ void handle_commands(char * cmd, int len) {
 }
 
 void process_commands() {
-    ssize_t rv = read(0, command_buf_ptr, command_buf_capac);
+    ssize_t rv = read(sockfd, command_buf_ptr, command_buf_capac);
 
     if (rv == -1) {
-        fprintf(stderr, "Error reading STDIN.\n");
-        exit(1);
+        fprintf(stderr, "Error reading commands.\n");
+        exit(2);
     }
     int cmd_len = 0;
     int i;
@@ -287,6 +292,9 @@ int main(int argc, char ** argv) {
         exit(1);
     }
 
+    // Use for error checking
+    int ret_code = 0;
+
     // Initialize AIO pin for temperature sensor
     temp_sensor = mraa_aio_init(1);
     if (temp_sensor == NULL) {
@@ -296,19 +304,51 @@ int main(int argc, char ** argv) {
     }
 
     // Open a TCP connection to the server at the specified address and port
+    struct sockaddr_in serv_addr;
+    struct hostent * server;
+    sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    if (sockfd < 0) {
+        fprintf(stderr, "Error opening socket.\n");
+        exit(2);
+    }
+    server = gethostbyname(arg_host);
+    if (server == NULL) {
+        fprintf(stderr, "Error getting host info with gethostbyname.\n");
+        exit(2);
+    }
+    bzero((char * ) & serv_addr, sizeof(serv_addr));
+    serv_addr.sin_family = AF_INET;
+    bcopy((char * ) server->h_addr, (char * ) & serv_addr.sin_addr.s_addr, server->h_length);
+    serv_addr.sin_port = htons(port);
+    if (connect(sockfd, (struct sockaddr * ) & serv_addr, sizeof(serv_addr)) < 0) {
+        fprintf(stderr, "Error connecting.\n");
+        exit(2);
+    }
 
+    // Send (and log) an ID terminated with a newline
+    char id_str[13] = {'I', 'D', '=', arg_id[0], arg_id[1], arg_id[2], arg_id[3], arg_id[4], arg_id[5], arg_id[6], arg_id[7], arg_id[8], '\n'};
+    ret_code = write(sockfd, &id_str, 13);
+    if (ret_code < 13) {
+        fprintf(stderr, "Error writing ID to socket.\n");
+        exit(2);
+    }
+    ret_code = write(logfd, &id_str, 13);
+    if (ret_code < 13) {
+        fprintf(stderr, "Error writing ID to log.\n");
+        exit(2);
+    }
 
     struct pollfd poll_commands[1];
-    poll_commands[0].fd = 0;
+    poll_commands[0].fd = sockfd;
     poll_commands[0].events = POLLIN;
     poll_commands[0].revents = 0;
 
     while (1) {
-        print_report();
+        send_report();
         int rv_poll = poll( & poll_commands[0], 1, 0);
         if (rv_poll == -1) {
-            fprintf(stderr, "Error polling for commands on STDIN.\n");
-            exit(1);
+            fprintf(stderr, "Error polling for commands.\n");
+            exit(2);
         } else if (rv_poll > 0 && (poll_commands[0].revents & POLLIN)) {
             process_commands();
         }
