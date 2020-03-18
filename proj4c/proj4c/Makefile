@@ -14,6 +14,8 @@ build: lab$(LAB)
 
 lab$(LAB):
 	$(CC) $(CFLAGS) lab$(LAB).c -o lab$(LAB)
+	-ln lab$(LAB) lab$(LAB)_tcp
+	-ln lab$(LAB) lab$(LAB)_tls
 
 check: build
 	-chmod +x test.sh
