@@ -40,6 +40,8 @@
 
 #include <openssl/evp.h>
 
+#include <libgen.h>
+
 // getopt options and arguments
 int opt_period = 0;
 int opt_scale = 0;
@@ -391,73 +393,61 @@ int main(int argc, char ** argv) {
     poll_commands[0].events = POLLIN;
     poll_commands[0].revents = 0;
 
-    send_id(0);
-    while (1) {
-        send_report(0);
-        int rv_poll = poll( & poll_commands[0], 1, 0);
-        if (rv_poll == -1) {
-            fprintf(stderr, "Error polling for commands.\n");
+    if (strncmp(basename(argv[0]), "lab4c_tcp", 9) == 0) {
+        send_id(0);
+        while (1) {
+            send_report(0);
+            int rv_poll = poll( & poll_commands[0], 1, 0);
+            if (rv_poll == -1) {
+                fprintf(stderr, "Error polling for commands.\n");
+                exit(2);
+            } else if (rv_poll > 0 && (poll_commands[0].revents & POLLIN)) {
+                process_commands(0);
+            }
+        }
+    } else if (strncmp(basename(argv[0]), "lab4c_tls", 9) == 0) {
+        // TLS set up
+        SSL_load_error_strings();
+        SSL_library_init();
+        // OPENSSL_add_all_algorithms();
+        SSL_CTX * ssl_ctx;
+        // ssl_ctx = SSL_CTX_new(TLSv1_client_method());
+        ssl_ctx = SSL_CTX_new(TLS_client_method());
+        if (ssl_ctx == NULL) {
+            fprintf(stderr, "Error creating TLS context object.\n");
             exit(2);
-        } else if (rv_poll > 0 && (poll_commands[0].revents & POLLIN)) {
-            process_commands(0);
+        }
+        conn_data = SSL_new(ssl_ctx);
+        if (conn_data == NULL) {
+            fprintf(stderr, "Error creating TLS connection data struct.\n");
+            exit(2);
+        }
+        if (SSL_set_fd(conn_data, sockfd) == 0) {
+            fprintf(stderr, "Error setting TLS file descriptor.\n");
+            exit(2);
+        }
+        ret_code = SSL_connect(conn_data);
+        if (ret_code == 0) {
+            fprintf(stderr, "Error initiating TLS handshake with the server (controlled shutdown).\n");
+            exit(2);
+        }
+        if (ret_code < 0) {
+            fprintf(stderr, "Error initiating TLS handshake with the server (fatal protocol-level error).\n");
+            exit(2);
+        }
+
+        send_id(1);
+        while (1) {
+            send_report(1);
+            int rv_poll = poll( & poll_commands[0], 1, 0);
+            if (rv_poll == -1) {
+                fprintf(stderr, "Error polling for commands.\n");
+                exit(2);
+            } else if (rv_poll > 0 && (poll_commands[0].revents & POLLIN)) {
+                process_commands(1);
+            }
         }
     }
-
-    // if (strncmp(argv[0], "lab4c_tcp", 9) == 0) {
-    //     send_id(0);
-    //     while (1) {
-    //         send_report(0);
-    //         int rv_poll = poll( & poll_commands[0], 1, 0);
-    //         if (rv_poll == -1) {
-    //             fprintf(stderr, "Error polling for commands.\n");
-    //             exit(2);
-    //         } else if (rv_poll > 0 && (poll_commands[0].revents & POLLIN)) {
-    //             process_commands(0);
-    //         }
-    //     }
-    // } else if (strncmp(argv[0], "lab4c_tls", 9) == 0) {
-    //     // TLS set up
-    //     SSL_load_error_strings();
-    //     SSL_library_init();
-    //     // OPENSSL_add_all_algorithms();
-    //     SSL_CTX * ssl_ctx;
-    //     // ssl_ctx = SSL_CTX_new(TLSv1_client_method());
-    //     ssl_ctx = SSL_CTX_new(TLS_client_method());
-    //     if (ssl_ctx == NULL) {
-    //         fprintf(stderr, "Error creating TLS context object.\n");
-    //         exit(2);
-    //     }
-    //     conn_data = SSL_new(ssl_ctx);
-    //     if (conn_data == NULL) {
-    //         fprintf(stderr, "Error creating TLS connection data struct.\n");
-    //         exit(2);
-    //     }
-    //     if (SSL_set_fd(conn_data, sockfd) == 0) {
-    //         fprintf(stderr, "Error setting TLS file descriptor.\n");
-    //         exit(2);
-    //     }
-    //     ret_code = SSL_connect(conn_data);
-    //     if (ret_code == 0) {
-    //         fprintf(stderr, "Error initiating TLS handshake with the server (controlled shutdown).\n");
-    //         exit(2);
-    //     }
-    //     if (ret_code < 0) {
-    //         fprintf(stderr, "Error initiating TLS handshake with the server (fatal protocol-level error).\n");
-    //         exit(2);
-    //     }
-
-    //     send_id(1);
-    //     while (1) {
-    //         send_report(1);
-    //         int rv_poll = poll( & poll_commands[0], 1, 0);
-    //         if (rv_poll == -1) {
-    //             fprintf(stderr, "Error polling for commands.\n");
-    //             exit(2);
-    //         } else if (rv_poll > 0 && (poll_commands[0].revents & POLLIN)) {
-    //             process_commands(1);
-    //         }
-    //     }
-    // }
 
     // Close AIO temperature sensor
     int status = mraa_aio_close(temp_sensor);
