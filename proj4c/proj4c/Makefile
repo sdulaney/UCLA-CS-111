@@ -7,8 +7,7 @@ CFLAGS = -g -Wall -Wextra -lmraa -lm -lssl -lcrypto
 ID = 904064791
 LAB = 4c
 ARCHIVE = lab$(LAB)-$(ID).tar.gz
-SCRIPTS = test.sh
-sources = lab$(LAB).c Makefile README $(SCRIPTS)
+sources = lab$(LAB).c Makefile README
 
 build: lab$(LAB)
 
@@ -16,10 +15,6 @@ lab$(LAB):
 	$(CC) $(CFLAGS) lab$(LAB).c -o lab$(LAB)
 	-ln lab$(LAB) lab$(LAB)_tcp
 	-ln lab$(LAB) lab$(LAB)_tls
-
-check: build
-	-chmod +x test.sh
-	-./test.sh
 
 clean:
 	-rm lab$(LAB)

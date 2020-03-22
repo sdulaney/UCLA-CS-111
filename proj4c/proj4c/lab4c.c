@@ -80,7 +80,7 @@ void shut_down(int tls) {
         int ret_code = SSL_write(conn_data, &buf, 18);
         if (ret_code < 18) {
             fprintf(stderr, "Error writing SHUTDOWN with TLS.\n");
-            exit(2);
+            exit(1);
         }
     } else {
         dprintf(sockfd, "%02d:%02d:%02d SHUTDOWN\n", parsed_time->tm_hour, parsed_time->tm_min, parsed_time->tm_sec);
@@ -88,6 +88,14 @@ void shut_down(int tls) {
     if (opt_log) {
         dprintf(logfd, "OFF\n");
         dprintf(logfd, "%02d:%02d:%02d SHUTDOWN\n", parsed_time->tm_hour, parsed_time->tm_min, parsed_time->tm_sec);
+    }
+    if (tls) {
+        int ret_code = SSL_shutdown(conn_data);
+        if (ret_code != 1) {
+            fprintf(stderr, "Error shutting down TLS connection.\n");
+            exit(1);
+        }
+        SSL_free(conn_data);
     }
     exit(0);
 }
@@ -125,7 +133,7 @@ void send_report(int tls) {
             int ret_code = SSL_write(conn_data, &buf, 14);
             if (ret_code < 14) {
                 fprintf(stderr, "Error sending report with TLS.\n");
-                exit(2);
+                exit(1);
             }
         } else {
             dprintf(sockfd, "%02d:%02d:%02d %.1f\n", parsed_time->tm_hour, parsed_time->tm_min, parsed_time->tm_sec, temperature);
@@ -173,13 +181,13 @@ void process_commands(int tls) {
         rv = SSL_read(conn_data, command_buf_ptr, command_buf_capac);
         if (rv <= 0) {
             fprintf(stderr, "Error reading commands with TLS.\n");
-            exit(2);
+            exit(1);
         }
     } else {
         rv = read(sockfd, command_buf_ptr, command_buf_capac);
         if (rv == -1) {
             fprintf(stderr, "Error reading commands.\n");
-            exit(2);
+            exit(1);
         }
     }
     
@@ -211,20 +219,20 @@ void send_id(int tls) {
         ret_code = SSL_write(conn_data, &id_str, 13);
         if (ret_code < 13) {
             fprintf(stderr, "Error writing ID to socket.\n");
-            exit(2);
+            exit(1);
         }
     } else {
         ret_code = write(sockfd, &id_str, 13);
         if (ret_code < 13) {
             fprintf(stderr, "Error writing ID to socket.\n");
-            exit(2);
+            exit(1);
         }
     }
     if (opt_log) {
         ret_code = write(logfd, &id_str, 13);
         if (ret_code < 13) {
             fprintf(stderr, "Error writing ID to log.\n");
-            exit(2);
+            exit(1);
         }
     }
 }
@@ -319,7 +327,7 @@ int main(int argc, char ** argv) {
             break;
 
         case '?':
-            fprintf(stderr, "usage: ./lab4c_tcp [OPTION]...\nvalid options: --period=# (default 1), --scale=[FC] (default F), --log=filename, --id=9-digit-number, --host=name or address\n");
+            fprintf(stderr, "usage: ./%s [OPTION]... port # (mandatory)\nvalid options: --period=# (default 1), --scale=[FC] (default F), --log=filename (mandatory), --id=9-digit-number (mandatory), --host=name or address (mandatory)\n", argv[0]);
             exit(1);
             break;
 
@@ -372,12 +380,12 @@ int main(int argc, char ** argv) {
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0) {
         fprintf(stderr, "Error opening socket.\n");
-        exit(2);
+        exit(1);
     }
     server = gethostbyname(arg_host);
     if (server == NULL) {
         fprintf(stderr, "Error getting host info with gethostbyname.\n");
-        exit(2);
+        exit(1);
     }
     bzero((char * ) & serv_addr, sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;
@@ -400,7 +408,7 @@ int main(int argc, char ** argv) {
             int rv_poll = poll( & poll_commands[0], 1, 0);
             if (rv_poll == -1) {
                 fprintf(stderr, "Error polling for commands.\n");
-                exit(2);
+                exit(1);
             } else if (rv_poll > 0 && (poll_commands[0].revents & POLLIN)) {
                 process_commands(0);
             }
@@ -416,16 +424,16 @@ int main(int argc, char ** argv) {
         ssl_ctx = SSL_CTX_new(TLS_client_method());
         if (ssl_ctx == NULL) {
             fprintf(stderr, "Error creating TLS context object.\n");
-            exit(2);
+            exit(1);
         }
         conn_data = SSL_new(ssl_ctx);
         if (conn_data == NULL) {
             fprintf(stderr, "Error creating TLS connection data struct.\n");
-            exit(2);
+            exit(1);
         }
         if (SSL_set_fd(conn_data, sockfd) == 0) {
             fprintf(stderr, "Error setting TLS file descriptor.\n");
-            exit(2);
+            exit(1);
         }
         ret_code = SSL_connect(conn_data);
         if (ret_code == 0) {
@@ -443,7 +451,7 @@ int main(int argc, char ** argv) {
             int rv_poll = poll( & poll_commands[0], 1, 0);
             if (rv_poll == -1) {
                 fprintf(stderr, "Error polling for commands.\n");
-                exit(2);
+                exit(1);
             } else if (rv_poll > 0 && (poll_commands[0].revents & POLLIN)) {
                 process_commands(1);
             }
