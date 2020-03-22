@@ -407,8 +407,8 @@ int main(int argc, char ** argv) {
         }
     } else if (strncmp(basename(argv[0]), "lab4c_tls", 9) == 0) {
         // TLS set up
-        SSL_load_error_strings();
         SSL_library_init();
+        SSL_load_error_strings();
         OpenSSL_add_all_algorithms();
         SSL_CTX * ssl_ctx;
         // TODO: https://piazza.com/class/k4x6oonkcge2mj?cid=1048
