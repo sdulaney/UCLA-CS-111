@@ -448,6 +448,13 @@ int main(int argc, char ** argv) {
                 process_commands(1);
             }
         }
+
+        ret_code = SSL_shutdown(conn_data);
+        if (ret_code != 1) {
+            fprintf(stderr, "Error shutting down TLS connection.\n");
+            exit(1);
+        }
+        SSL_free(conn_data);
     }
 
     // Close AIO temperature sensor
