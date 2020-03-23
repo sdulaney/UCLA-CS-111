@@ -90,11 +90,7 @@ void shut_down(int tls) {
         dprintf(logfd, "%02d:%02d:%02d SHUTDOWN\n", parsed_time->tm_hour, parsed_time->tm_min, parsed_time->tm_sec);
     }
     if (tls) {
-        int ret_code = SSL_shutdown(conn_data);
-        if (ret_code != 1) {
-            fprintf(stderr, "Error shutting down TLS connection.\n");
-            exit(1);
-        }
+        SSL_shutdown(conn_data);
         SSL_free(conn_data);
     }
     exit(0);
@@ -419,8 +415,6 @@ int main(int argc, char ** argv) {
         SSL_load_error_strings();
         OpenSSL_add_all_algorithms();
         SSL_CTX * ssl_ctx;
-        // TODO: https://piazza.com/class/k4x6oonkcge2mj?cid=1048
-        // ssl_ctx = SSL_CTX_new(TLSv1_client_method());
         ssl_ctx = SSL_CTX_new(TLS_client_method());
         if (ssl_ctx == NULL) {
             fprintf(stderr, "Error creating TLS context object.\n");
@@ -457,11 +451,7 @@ int main(int argc, char ** argv) {
             }
         }
 
-        ret_code = SSL_shutdown(conn_data);
-        if (ret_code != 1) {
-            fprintf(stderr, "Error shutting down TLS connection.\n");
-            exit(1);
-        }
+        SSL_shutdown(conn_data);
         SSL_free(conn_data);
     }
 
